@@ -3,6 +3,8 @@ import uniqueId from "lodash-es/uniqueId";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { RouterProvider } from "react-router-dom";
 import "./App.css";
+import { captureAndAlertRequestErrorHoc } from "./controllers/request"
+import { ssocLoginApi } from "./controllers/API/user";
 
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
@@ -17,6 +19,27 @@ import { getAdminRouter, getPrivateRouter, publicRouter } from "./routes";
 import { LoadingIcon } from "./components/bs-icons/loading";
 
 export default function App() {
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const ticket = urlParams.get('ticket');
+    const serverip = urlParams.get('serverip');
+    const urlport = urlParams.get('urlport');
+    const socketport = urlParams.get('socketport');
+    const urlpath = urlParams.get('urlpath');
+    const appid =  urlParams.get('appid');
+    console.log('ticket: ', ticket)
+    if (ticket) {
+      // 发送GET请求以获取userId
+      captureAndAlertRequestErrorHoc(ssocLoginApi(ticket, serverip, urlport, socketport, urlpath, appid).then((res: any) => {
+        // setUser(res.data)
+        localStorage.setItem('user_name', res.user_name)
+        localStorage.setItem('ws_token', res.access_token)
+        localStorage.setItem('isLogin', '1')
+        location.href = '/'
+        }))
+    }
+  }, []);
+
   let { setCurrent, setShowSideBar, setIsStackedOpen } = useContext(locationContext);
   // let location = useLocation();
   useEffect(() => {

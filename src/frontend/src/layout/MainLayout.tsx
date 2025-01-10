@@ -38,6 +38,7 @@ export default function MainLayout() {
     // 角色
     const { user, setUser } = useContext(userContext);
     const { language, options, changLanguage, t } = useLanguage(user)
+    const user_name = localStorage.getItem('user_name')
 
     const handleLogout = () => {
         bsConfirm({
@@ -76,7 +77,7 @@ export default function MainLayout() {
                 <div className="flex h-9 my-[14px]">
                     <Link className="inline-block" to='/'>
                         {/* @ts-ignore */}
-                        <img src={__APP_ENV__.BASE_URL + '/login-logo-small.png'} className="w-[104px] ml-[38px] rounded dark:w-[104px]" alt="" />
+                        <img src={__APP_ENV__.BASE_URL + '/login-logo-small-jn.png'} className="w-[104px] ml-[38px] rounded dark:w-[104px]" alt="" />
                     </Link>
                 </div>
                 <div>
@@ -84,7 +85,7 @@ export default function MainLayout() {
                 </div>
                 <div className="flex w-fit relative z-10">
                     <div className="flex">
-                        <TooltipProvider>
+                        {/*<TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger className="h-8 w-8 bg-header-icon rounded-lg cursor-pointer my-4" onClick={() => setDark(!dark)}>
                                     <div className="">
@@ -98,7 +99,7 @@ export default function MainLayout() {
                                 <TooltipContent><p>{t('menu.themeSwitch')}</p></TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
-                        <Separator className="mx-[4px] dark:bg-[#111111]" orientation="vertical" />
+                        <Separator className="mx-[4px] dark:bg-[#111111]" orientation="vertical" />*/}
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger className="h-8 w-8 bg-header-icon rounded-lg cursor-pointer my-4" onClick={changLanguage}>
@@ -119,7 +120,7 @@ export default function MainLayout() {
                         <SelectHover
                             triagger={
                                 <span className="leading-8 text-[14px] mr-8 max-w-40 cursor-pointer text-ellipsis overflow-hidden whitespace-nowrap">
-                                    {user.user_name} <ChevronDown className="inline-block mt-[-2px]" />
+                                    {user_name} <ChevronDown className="inline-block mt-[-2px]" />
                                 </span>
                             }>
                             <SelectHoverItem onClick={JumpResetPage}><Lock className="w-4 h-4 mr-1" /><span>{t('menu.changePwd')}</span></SelectHoverItem>

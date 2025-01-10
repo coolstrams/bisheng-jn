@@ -27,6 +27,10 @@ export async function loginApi(name, pwd, captcha_key?, captcha?) {
     captcha,
   });
 }
+// 统一登录
+export async function ssocLoginApi(ticket, serverip, urlport, socketport, urlpath, appid) {
+    return await axios.get(`/api/v1/user/ssocLogin?ticket=${ticket}&serverip=${serverip}&urlport=${urlport}&socketport=${socketport}&urlpath=${urlpath}&appid=${appid}`);
+}
 // 注册
 export async function registerApi(name, pwd, captcha_key?, captcha?) {
   return await axios.post(`/api/v1/user/regist`, {

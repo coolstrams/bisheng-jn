@@ -14,6 +14,7 @@ import LoginBridge from './loginBridge';
 import { PWD_RULE, handleEncrypt, handleLdapEncrypt } from './utils';
 import { locationContext } from '@/contexts/locationContext';
 import { ldapLoginApi } from '@/controllers/API/pro';
+import {require} from "ace-builds";
 
 export const LoginPage = () => {
     // const { setErrorData, setSuccessData } = useContext(alertContext);
@@ -43,6 +44,25 @@ export const LoginPage = () => {
         getCaptchaApi().then(setCaptchaData)
     };
 
+    // 增加统一登录调用
+    function getQueryParams(url) {
+        const paramArr = url.slice(url.indexOf("?") + 1).split("&")
+        const params = {}
+        paramArr.map((param) => {
+            const [key, val] = param.split("=");
+            params[key] = decodeURIComponent(val);
+        });
+        return params;
+    }
+
+    let url = location.href;
+    // let url = window.location.search;
+    // let url = this.props.location.pathname;
+    console.log(url);
+    console.log(getQueryParams(url));
+
+    // const java = require('java')
+
     const [isLDAP, setIsLDAP] = useState(false)
     const handleLogin = async () => {
         const error = []
@@ -67,7 +87,9 @@ export const LoginPage = () => {
                 : loginApi(mail, encryptPwd, captchaData.captcha_key, captchaRef.current?.value)
             ).then((res: any) => {
                 window.self === window.top ? localStorage.removeItem('ws_token') : localStorage.setItem('ws_token', res.access_token)
+                localStorage.setItem('user_name', res.user_name)
                 localStorage.setItem('isLogin', '1')
+                localStorage.setItem('userName', res.user_name)
                 location.href = location.href
                 // location.href = __APP_ENV__.BASE_URL + '/'
             }), (error) => {
@@ -92,9 +114,9 @@ export const LoginPage = () => {
         if (!/.{8,}/.test(pwd)) {
             error.push(t('login.passwordTooShort'))
         }
-        if (!PWD_RULE.test(pwd)) {
+        /*if (!PWD_RULE.test(pwd)) {
             error.push(t('login.passwordError'))
-        }
+        }*/
         if (pwd !== apwd) {
             error.push(t('login.passwordMismatch'))
         }
@@ -126,14 +148,14 @@ export const LoginPage = () => {
     return <div className='w-full h-full bg-background-dark'>
         <div className='fixed z-10 sm:w-[1280px] w-full sm:h-[720px] h-full translate-x-[-50%] translate-y-[-50%] left-[50%] top-[50%] border rounded-lg shadow-xl overflow-hidden bg-background-login'>
             <div className='w-[420px] h-[704px] m-[8px] hidden sm:block relative z-20'>
-                <img src={__APP_ENV__.BASE_URL + '/login-logo-big.png'} alt="logo_picture" className='w-full h-full dark:hidden' />
+                <img src={__APP_ENV__.BASE_URL + '/login-logo-big-jn.png'} alt="logo_picture" className='w-full h-full dark:hidden' />
                 <img src={__APP_ENV__.BASE_URL + '/login-logo-dark.png'} alt="logo_picture" className='w-full h-full hidden dark:block' />
                 {/* <iframe src={__APP_ENV__.BASE_URL + '/face.html'} className='w-full h-full'></iframe> */}
             </div>
             <div className='absolute w-full h-full z-10 flex justify-end top-0'>
                 <div className='w-[852px] sm:px-[266px] px-[20px] pyx-[200px] bg-background-login relative'>
                     <div>
-                        <img src={__APP_ENV__.BASE_URL + '/login-logo-small.png'} className="block w-[114px] h-[36px] m-auto mt-[140px] dark:w-[124px] dark:pr-[10px] dark:hidden" alt="" />
+                        <img src={__APP_ENV__.BASE_URL + '/login-logo-small-jn.png'} className="block w-[114px] h-[36px] m-auto mt-[140px] dark:w-[124px] dark:pr-[10px] dark:hidden" alt="" />
                         <img src={__APP_ENV__.BASE_URL + '/logo-small-dark.png'} className="w-[114px] h-[36px] m-auto mt-[140px] dark:w-[124px] dark:pr-[10px] dark:block hidden" alt="" />
                         <span className='block w-fit m-auto font-normal text-[14px] text-tx-color mt-[24px]'>{t('login.slogen')}</span>
                     </div>

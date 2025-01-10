@@ -81,7 +81,7 @@ export default function HomePage({ onSelect }) {
     return <div className="h-full overflow-hidden bs-chat-bg" style={{ backgroundImage: `url(${__APP_ENV__.BASE_URL}/points.png)` }}>
         <div className="flex justify-center place-items-center gap-20">
             {/* @ts-ignore */}
-            <img className="w-[138px]" src={__APP_ENV__.BASE_URL + '/application-start-logo.png'} alt="" />
+            <img className="w-[138px]" src={__APP_ENV__.BASE_URL + '/application-start-logo.gif'} alt="" />
             <p className="text-2xl leading-[50px] dark:text-[#D4D4D4]">
                 {t('chat.chooseOne')}<b className=" dark:text-[#D4D4D4] font-semibold">{t('chat.dialogue')}</b><br />{t('chat.start')}<b className=" dark:text-[#D4D4D4] font-semibold">{t('chat.wenqingruijian')}</b>
             </p>

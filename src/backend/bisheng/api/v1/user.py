@@ -8,6 +8,8 @@ from datetime import datetime
 from io import BytesIO
 from typing import Annotated, Dict, List, Optional
 from uuid import UUID
+import jpype
+from jpype import JString, JInt
 
 from bisheng.database.models.mark_task import MarkTaskDao
 import rsa
@@ -20,7 +22,7 @@ from sqlmodel import delete, select
 
 from bisheng.api.errcode.base import UnAuthorizedError
 from bisheng.api.errcode.user import (UserNotPasswordError, UserPasswordExpireError,
-                                      UserValidateError, UserPasswordError)
+                                      UserValidateError, UserPasswordError, UserNameNotExistError)
 from bisheng.api.JWT import ACCESS_TOKEN_EXPIRE_TIME
 from bisheng.api.utils import get_request_ip
 from bisheng.api.services.audit_log import AuditLogService
@@ -80,6 +82,87 @@ async def regist(*, user: UserCreate):
     return resp_200(db_user)
 
 
+@router.get("/user/ssocLogin", response_model=UnifiedResponseModel[UserRead], status_code=201)
+async def ssoc_login(*, ticket, serverip, urlport, socketport, urlpath, appid, Authorize: AuthJWT = Depends()):
+    userId = ''
+    try:
+        # 启动JVM，加载Java虚拟机
+        if not jpype.isJVMStarted():
+            jpype.startJVM(jpype.getDefaultJVMPath())
+            logger.debug(f'jpype.DefaultJVMPath:{jpype.getDefaultJVMPath()}')
+            logger.debug('startJVM')
+        # 加载指定路径的JAR文件
+        jar_path = '../../ssocClient.jar'
+        jpype.addClassPath(jar_path)
+        # 导入Java类
+        PackClass = jpype.JClass('org.pack.RecePack')
+        logger.debug(f'PackClass:{PackClass} ')
+        ClientClass = jpype.JClass('org.jn.Client')
+        logger.debug('ClientClass:{} ', ClientClass)
+        variableClass = jpype.JClass('org.jn.Variable')
+        logger.debug('variableClass:{} ', variableClass)
+        # 创建Java类的实例
+        client = ClientClass()
+        logger.debug(f'client:{client} ')
+        variable = variableClass()
+        variable.serverIP = JString(serverip)
+        logger.debug(f'serverIP:{variable.serverIP} ')
+        variable.urlPort = JInt(urlport)
+        variable.socketPort = JInt(socketport)
+        variable.urlPath = JString(urlpath)
+        variable.appid = JString(appid)
+        # 调用Java类的方法
+        logger.debug(f'ticket:{ticket} ')
+        pack = client.getUser(JString(ticket))
+        logger.debug(f'pack:{pack} ')
+        userId = str(pack.getUser())
+        logger.debug('userId:{} ', userId)
+    except Exception as e:
+        print(e)
+    finally:
+        if jpype.isJVMStarted():
+            # jpype.shutdownJVM()
+            logger.debug('shutdownJVM')
+
+    # check if user already exist
+    with session_getter() as session:
+        db_user = session.exec(
+            select(User).where(User.user_name == userId)).first()
+        # logger.debug('db_user:{} ', db_user)
+    if db_user:
+        if 1 == db_user.delete:
+            raise HTTPException(status_code=500, detail='该账号已被禁用，请联系管理员')
+        # 查询角色
+        with session_getter() as session:
+            db_user_role = session.exec(
+                select(UserRole).where(UserRole.user_id == db_user.user_id)).all()
+            # logger.debug('db_user_role:{} ', db_user_role)
+
+        if next((user_role for user_role in db_user_role if user_role.role_id == 1), None):
+            # 是管理员，忽略其他的角色
+            role = 'admin'
+        else:
+            role = [user_role.role_id for user_role in db_user_role]
+            # logger.debug('role:{} ', role)
+        # 生成JWT令牌
+        payload = {'user_name': userId, 'user_id': db_user.user_id, 'role': role}
+        # logger.debug('payload:{} ', payload)
+        # Create the tokens and passing to set_access_cookies or set_refresh_cookies
+        access_token = Authorize.create_access_token(subject=json.dumps(payload),
+                                                     expires_time=86400)
+        # logger.debug('access_token:{} ', access_token)
+
+        refresh_token = Authorize.create_refresh_token(subject=userId)
+
+        # Set the JWT cookies in the response
+        Authorize.set_access_cookies(access_token)
+        Authorize.set_refresh_cookies(refresh_token)
+
+        return resp_200(UserRead(role=str(role), access_token=access_token, **db_user.__dict__))
+    else:
+        raise HTTPException(status_code=500, detail='用户不存在')
+
+
 @router.post('/user/sso', response_model=UnifiedResponseModel[UserRead], status_code=201)
 async def sso(*, user: UserCreate):
     """ 给闭源网关提供的登录接口 """
@@ -129,7 +212,9 @@ async def login(*, request: Request, user: UserLogin, Authorize: AuthJWT = Depen
 
     db_user = UserDao.get_user_by_username(user.user_name)
     # 检查密码
-    if not db_user or not db_user.password:
+    if not db_user:
+        return UserNameNotExistError.return_resp()
+    if not db_user.password:
         return UserValidateError.return_resp()
 
     if 1 == db_user.delete:

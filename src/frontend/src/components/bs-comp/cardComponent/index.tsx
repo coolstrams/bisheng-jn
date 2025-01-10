@@ -104,6 +104,8 @@ export default function CardComponent<T>({
     setChecked(bln)
   }
 
+  const userName = localStorage.getItem("userName") || '';
+
   // 新建小卡片（sheet）
   if (!id && type === 'sheet') return <Card className="group w-[320px] cursor-pointer border-dashed border-[#BEC6D6] transition hover:border-primary hover:shadow-none bg-background-new" onClick={onClick}>
     <CardHeader>
@@ -174,14 +176,14 @@ export default function CardComponent<T>({
         </TitleLogo>
         <div className="flex gap-1 items-center">
           {headSelecter}
-          <Switch
+          {(isAdmin || user === userName) && <Switch
             checked={_checked}
             className="w-12"
             // @ts-ignore
             texts={[t('skills.online'), t('skills.offline')]}
             onCheckedChange={(b) => edit && handleCheckedChange(b)}
             onClick={e => { e.stopPropagation(); onSwitchClick?.() }}
-          ></Switch>
+          ></Switch>}
         </div>
       </div>
       <CardTitle className="truncate-doubleline leading-5">{title}</CardTitle>

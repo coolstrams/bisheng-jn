@@ -37,6 +37,11 @@ class UserNeedGroupAndRoleError(BaseErrorCode):
     Msg: str = '用户组和角色不能为空'
 
 
+class UserNameNotExistError(BaseErrorCode):
+    Code: int = 10607
+    Msg: str = '用户名不存在'
+
+
 class UserGroupNotDeleteError(BaseErrorCode):
     Code: int = 10610
     Msg: str = '用户组内还有用户，不能删除'
