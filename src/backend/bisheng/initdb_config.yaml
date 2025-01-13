@@ -1,5 +1,5 @@
 knowledges: # 知识库相关配置
-  unstructured_api_url: ""  # 非必填，若要开启溯源能力则必填。使用毕昇官网提供的测试服务，可以填入地址：https://bisheng.dataelem.com/api/v1/etl4llm/predict，如果在私有环境部署了bisheng-unstructured服务，可以填入地址：http://ip:port/v1/etl4llm/predict。注意：添加地址后，需要手动刷新页面后在知识库中上传文档。
+  unstructured_api_url: "http://36.114.30.47:10001/v1/etl4llm/predict"  # 非必填，若要开启溯源能力则必填。使用毕昇官网提供的测试服务，可以填入地址：https://bisheng.dataelem.com/api/v1/etl4llm/predict，如果在私有环境部署了bisheng-unstructured服务，可以填入地址：http://ip:port/v1/etl4llm/predict。注意：添加地址后，需要手动刷新页面后在知识库中上传文档。
 
 llm_request:
   # 控制技能 LLM 组件模型访问的超时配置, 以下是默认值
@@ -28,7 +28,7 @@ system_login_method:
   admin_username: admin # 从 SSO/LDAP 注册的管理员用户名
 
 # 登陆页面是否需要输入验证码，可设置为True或False
-use_captcha: True
+use_captcha: False
 
 # 会话窗口底部提示文案
 dialog_tips:
@@ -39,11 +39,11 @@ env:
   # dialog_quick_search: http://www.baidu.com/s?wd=
   # 当用户的环境前面的网关，不能在同一个端口上既有http又有socket时，需要这个配置，将两个请求区分开，默认可以不用
   # websocket_url: 192.168.106.120:3003
-  office_url: http://IP:8701 # onlyoffice 组件地址，需要浏览器能直接访问
+  office_url: http://36.114.30.46:8701 # onlyoffice 组件地址，需要浏览器能直接访问
   # 是否展示前端界面上的github和帮助链接
-  show_github_and_help: true
+  show_github_and_help: false
   # 是否开启注册
-  enable_registration: true
+  enable_registration: false
 
 workflow:
   # 节点运行最大步数
