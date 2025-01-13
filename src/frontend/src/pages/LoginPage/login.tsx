@@ -214,6 +214,7 @@ export const LoginPage = () => {
                                     {!isLDAP && appConfig.register && <a href="javascript:;" className=" text-blue-500 text-sm hover:underline" onClick={() => setShowLogin(false)}>{t('login.noAccountRegister')}</a>}
                                 </div>
                                 <Button
+                                    variant={"golden"}
                                     className='h-[48px] mt-[32px] dark:bg-button'
                                     disabled={isLoading} onClick={handleLogin} >{t('login.loginButton')}</Button>
                             </> :
