@@ -21,6 +21,9 @@ RUN apt-get update && apt-get install procps -y
 RUN apt install vim fonts-wqy-zenhei -y
 # opencv
 RUN apt-get update && apt-get install -y libglib2.0-0 libsm6 libxrender1 libxext6 libgl1
+RUN apt-get install -y openjdk-17-jdk
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH="$JAVA_HOME/bin:$PATH"
 RUN curl -sSL https://install.python-poetry.org | python3 - --version 1.8.2
 # # Add Poetry to PATH
 ENV PATH="${PATH}:/root/.local/bin"
