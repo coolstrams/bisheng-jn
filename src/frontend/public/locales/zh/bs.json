@@ -1,5 +1,5 @@
 {
-  "title": "小江智脑",
+  "title": "AI技术平台",
   "prompt": "提示",
   "login": {
     "slogen": "高效、智能、多功能的AI服务平台",
@@ -185,7 +185,7 @@
     "chooseOne": "选择一个",
     "dialogue": "对话",
     "start": "开始",
-    "wenqingruijian": "小江对话",
+    "wenqingruijian": "智能对话",
     "inputPlaceholder": "请输入问题",
     "uploadFileTooltip": "上传文件",
     "sendTooltip": "发送",

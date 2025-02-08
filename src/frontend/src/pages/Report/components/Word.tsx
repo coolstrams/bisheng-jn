@@ -56,8 +56,8 @@ export default function Word({ data, workflow }) {
                 unit: "cm",
                 uiTheme: "theme-dark",
                 logo: {
-                    "image": location.origin + __APP_ENV__.BASE_URL + "/logo.png",
-                    "imageDark": location.origin + __APP_ENV__.BASE_URL + "/logo.png",
+                    "image": location.origin + __APP_ENV__.BASE_URL + "/jsrcb.png",
+                    "imageDark": location.origin + __APP_ENV__.BASE_URL + "/jsrcb.png",
                     "url": "https://example.com"
                 }
             },
