@@ -7,9 +7,9 @@ import NodeLogo from "../NodeLogo";
 
 const isMatch = (obj, expression) => {
     // 临时关闭 file类型表单变量
-    if (obj.key === 'form_input') {
-        expression = "value.filter(el => el.type !== 'file').map(el => ({ label: el.key, value: el.key }))"
-    }
+    // if (obj.key === 'form_input') {
+    //     expression = "value.filter(el => el.type !== 'file').map(el => ({ label: el.key, value: el.key }))"
+    // }
     const fn = new Function('value', `return ${expression}`);
     return fn(obj.value);
 };
