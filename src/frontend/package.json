@@ -42,7 +42,7 @@
     "jsencrypt": "^3.3.2",
     "lodash-es": "^4.17.21",
     "lucide-react": "^0.446.0",
-    "pdfjs-dist": "3.10.111",
+    "pdfjs-dist": "^4.10.38",
     "react": "^18.3.1",
     "react-ace": "^11.0.1",
     "react-beautiful-dnd": "^13.1.1",
@@ -110,9 +110,9 @@
     "prettier-plugin-tailwindcss": "^0.6.5",
     "rollup-plugin-visualizer": "^5.12.0",
     "typescript": "^5.4.5",
-    "vite": "^5.4.11",
+    "vite": "^6.2.0",
     "vite-plugin-html": "^3.2.2",
-    "vite-plugin-static-copy": "^1.0.6",
+    "vite-plugin-static-copy": "^2.3.0",
     "vite-plugin-svgr": "^4.2.0"
   },
   "engines": {
