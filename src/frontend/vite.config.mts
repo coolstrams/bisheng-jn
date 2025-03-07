@@ -100,7 +100,7 @@ export default defineConfig(() => {
             dest: 'node_modules/ace-builds/src-min-noconflict/'
           },
           {
-            src: 'node_modules/pdfjs-dist/build/pdf.worker.min.js',
+            src: ['node_modules/pdfjs-dist/build/pdf.worker.min.mjs', 'node_modules/pdfjs-dist/build/pdf.worker.mjs'],
             dest: './'
           }
         ]
