@@ -34,6 +34,7 @@ export default function App() {
         // setUser(res.data)
         localStorage.setItem('user_name', res.user_name)
         localStorage.setItem('ws_token', res.access_token)
+        localStorage.setItem('userName', res.user_name)
         localStorage.setItem('isLogin', '1')
         location.href = '/'
         }))
