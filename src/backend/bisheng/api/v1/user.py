@@ -2,24 +2,20 @@ import hashlib
 import json
 import random
 import string
-import uuid
 from base64 import b64encode
 from datetime import datetime
 from io import BytesIO
 from typing import Annotated, Dict, List, Optional
-from uuid import UUID
-import jpype
-from jpype import JString, JInt
 
-from bisheng.database.models.mark_task import MarkTaskDao
 import rsa
 from fastapi import APIRouter, Depends, HTTPException, Query, Body, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer
 from fastapi_jwt_auth import AuthJWT
-from sqlalchemy import and_, func
-from sqlmodel import delete, select
+from sqlmodel import delete, select, func
+from captcha.image import ImageCaptcha
 
+from bisheng.utils import generate_uuid
 from bisheng.api.errcode.base import UnAuthorizedError
 from bisheng.api.errcode.user import (UserNotPasswordError, UserPasswordExpireError,
                                       UserValidateError, UserPasswordError, UserNameNotExistError)
@@ -30,20 +26,20 @@ from bisheng.api.services.captcha import verify_captcha
 from bisheng.api.services.user_service import (UserPayload, gen_user_jwt, gen_user_role, get_login_user,
                                                get_assistant_list_by_access, get_admin_user, UserService)
 from bisheng.api.v1.schemas import UnifiedResponseModel, resp_200, CreateUserReq
+from bisheng.database.models.mark_task import MarkTaskDao
+
 from bisheng.cache.redis import redis_client
 from bisheng.database.base import session_getter
-from bisheng.database.models.flow import Flow
 from bisheng.database.models.group import GroupDao
-from bisheng.database.models.knowledge import Knowledge
-from bisheng.database.models.role import Role, RoleCreate, RoleDao, RoleUpdate, AdminRole, DefaultRole
-from bisheng.database.models.role_access import AccessType, RoleAccess, RoleRefresh
+from bisheng.database.models.role import Role, RoleCreate, RoleDao, RoleUpdate
+from bisheng.database.constants import AdminRole, DefaultRole
+from bisheng.database.models.role_access import RoleAccess, RoleRefresh
 from bisheng.database.models.user import User, UserCreate, UserDao, UserLogin, UserRead, UserUpdate
 from bisheng.database.models.user_group import UserGroupDao
 from bisheng.database.models.user_role import UserRole, UserRoleCreate, UserRoleDao
 from bisheng.settings import settings
 from bisheng.utils.constants import CAPTCHA_PREFIX, RSA_KEY, USER_PASSWORD_ERROR, USER_CURRENT_SESSION
 from bisheng.utils.logger import logger
-from captcha.image import ImageCaptcha
 
 # build router
 router = APIRouter(prefix='', tags=['User'])
@@ -51,7 +47,7 @@ router = APIRouter(prefix='', tags=['User'])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
 
-@router.post('/user/regist', response_model=UnifiedResponseModel[UserRead], status_code=201)
+@router.post('/user/regist')
 async def regist(*, user: UserCreate):
     # 验证码校验
     if settings.get_from_db('use_captcha'):
@@ -82,89 +78,8 @@ async def regist(*, user: UserCreate):
     return resp_200(db_user)
 
 
-@router.get("/user/ssocLogin", response_model=UnifiedResponseModel[UserRead], status_code=201)
-async def ssoc_login(*, ticket, serverip, urlport, socketport, urlpath, appid, Authorize: AuthJWT = Depends()):
-    userId = ''
-    try:
-        # 启动JVM，加载Java虚拟机
-        if not jpype.isJVMStarted():
-            jpype.startJVM(jpype.getDefaultJVMPath())
-            logger.debug(f'jpype.DefaultJVMPath:{jpype.getDefaultJVMPath()}')
-            logger.debug('startJVM')
-        # 加载指定路径的JAR文件
-        jar_path = '../../ssocClient.jar'
-        jpype.addClassPath(jar_path)
-        # 导入Java类
-        PackClass = jpype.JClass('org.pack.RecePack')
-        logger.debug(f'PackClass:{PackClass} ')
-        ClientClass = jpype.JClass('org.jn.Client')
-        logger.debug('ClientClass:{} ', ClientClass)
-        variableClass = jpype.JClass('org.jn.Variable')
-        logger.debug('variableClass:{} ', variableClass)
-        # 创建Java类的实例
-        client = ClientClass()
-        logger.debug(f'client:{client} ')
-        variable = variableClass()
-        variable.serverIP = JString(serverip)
-        logger.debug(f'serverIP:{variable.serverIP} ')
-        variable.urlPort = JInt(urlport)
-        variable.socketPort = JInt(socketport)
-        variable.urlPath = JString(urlpath)
-        variable.appid = JString(appid)
-        # 调用Java类的方法
-        logger.debug(f'ticket:{ticket} ')
-        pack = client.getUser(JString(ticket))
-        logger.debug(f'pack:{pack} ')
-        userId = str(pack.getUser())
-        logger.debug('userId:{} ', userId)
-    except Exception as e:
-        print(e)
-    finally:
-        if jpype.isJVMStarted():
-            # jpype.shutdownJVM()
-            logger.debug('shutdownJVM')
-
-    # check if user already exist
-    with session_getter() as session:
-        db_user = session.exec(
-            select(User).where(User.user_name == userId)).first()
-        # logger.debug('db_user:{} ', db_user)
-    if db_user:
-        if 1 == db_user.delete:
-            raise HTTPException(status_code=500, detail='该账号已被禁用，请联系管理员')
-        # 查询角色
-        with session_getter() as session:
-            db_user_role = session.exec(
-                select(UserRole).where(UserRole.user_id == db_user.user_id)).all()
-            # logger.debug('db_user_role:{} ', db_user_role)
-
-        if next((user_role for user_role in db_user_role if user_role.role_id == 1), None):
-            # 是管理员，忽略其他的角色
-            role = 'admin'
-        else:
-            role = [user_role.role_id for user_role in db_user_role]
-            # logger.debug('role:{} ', role)
-        # 生成JWT令牌
-        payload = {'user_name': userId, 'user_id': db_user.user_id, 'role': role}
-        # logger.debug('payload:{} ', payload)
-        # Create the tokens and passing to set_access_cookies or set_refresh_cookies
-        access_token = Authorize.create_access_token(subject=json.dumps(payload),
-                                                     expires_time=86400)
-        # logger.debug('access_token:{} ', access_token)
-
-        refresh_token = Authorize.create_refresh_token(subject=userId)
-
-        # Set the JWT cookies in the response
-        Authorize.set_access_cookies(access_token)
-        Authorize.set_refresh_cookies(refresh_token)
-
-        return resp_200(UserRead(role=str(role), access_token=access_token, **db_user.__dict__))
-    else:
-        raise HTTPException(status_code=500, detail='用户不存在')
-
-
-@router.post('/user/sso', response_model=UnifiedResponseModel[UserRead], status_code=201)
-async def sso(*, user: UserCreate):
+@router.post('/user/sso')
+async def sso(*, request: Request, user: UserCreate):
     """ 给闭源网关提供的登录接口 """
     if settings.get_system_login_method().bisheng_pro:  # 判断sso 是否打开
         account_name = user.user_name
@@ -186,6 +101,15 @@ async def sso(*, user: UserCreate):
             UserGroupDao.add_default_user_group(user_exist.user_id)
 
         access_token, refresh_token, _, _ = gen_user_jwt(user_exist)
+
+        # 设置登录用户当前的cookie, 比jwt有效期多一个小时
+        redis_client.set(USER_CURRENT_SESSION.format(user_exist.user_id), access_token, ACCESS_TOKEN_EXPIRE_TIME + 3600)
+
+        # 记录审计日志
+        AuditLogService.user_login(UserPayload(**{
+            'user_name': user_exist.user_name,
+            'user_id': user_exist.user_id,
+        }), get_request_ip(request))
         return resp_200({'access_token': access_token, 'refresh_token': refresh_token})
     else:
         raise ValueError('不支持接口')
@@ -201,7 +125,7 @@ def clear_error_password_key(username: str):
     redis_client.delete(error_key)
 
 
-@router.post('/user/login', response_model=UnifiedResponseModel[UserRead], status_code=201)
+@router.post('/user/login')
 async def login(*, request: Request, user: UserLogin, Authorize: AuthJWT = Depends()):
     # 验证码校验
     if settings.get_from_db('use_captcha'):
@@ -262,7 +186,7 @@ async def login(*, request: Request, user: UserLogin, Authorize: AuthJWT = Depen
     return resp_200(UserRead(role=str(role), web_menu=web_menu, access_token=access_token, **db_user.__dict__))
 
 
-@router.get('/user/admin', response_model=UnifiedResponseModel[UserRead], status_code=200)
+@router.get('/user/admin')
 async def get_admins(login_user: UserPayload = Depends(get_login_user)):
     """
     获取所有的超级管理员账号
@@ -281,7 +205,7 @@ async def get_admins(login_user: UserPayload = Depends(get_login_user)):
         raise HTTPException(status_code=500, detail='用户信息失败')
 
 
-@router.get('/user/info', response_model=UnifiedResponseModel[UserRead], status_code=201)
+@router.get('/user/info')
 async def get_info(login_user: UserPayload = Depends(get_login_user)):
     # check if user already exist
     try:
@@ -575,11 +499,7 @@ async def delete_role(*,
 
     # 删除role相关的数据
     try:
-        with session_getter() as session:
-            session.delete(db_role)
-            session.exec(delete(UserRole).where(UserRole.role_id == role_id))
-            session.exec(delete(RoleAccess).where(RoleAccess.role_id == role_id))
-            session.commit()
+        RoleDao.delete_role(role_id)
     except Exception as e:
         logger.exception(e)
         raise HTTPException(status_code=500, detail='删除角色失败')
@@ -709,8 +629,6 @@ async def access_refresh(*, request: Request, data: RoleRefresh, login_user: Use
     # 添加新的权限
     with session_getter() as session:
         for third_id in access_id:
-            if access_type in [AccessType.FLOW.value, AccessType.ASSISTANT_READ.value, AccessType.WORK_FLOW.value,]:
-                third_id = UUID(third_id).hex
             role_access = RoleAccess(role_id=role_id, third_id=str(third_id), type=access_type)
             session.add(role_access)
         session.commit()
@@ -736,10 +654,6 @@ async def access_list(*, role_id: int, type: Optional[int] = None, login_user: U
     with session_getter() as session:
         db_role_access = session.exec(sql).all()
         total_count = session.scalar(count_sql)
-    # uuid 和str的转化
-    for access in db_role_access:
-        if access.type in [AccessType.FLOW.value, AccessType.ASSISTANT_READ.value,AccessType.WORK_FLOW.value]:
-            access.third_id = UUID(access.third_id)
 
     return resp_200({
         'data': [jsonable_encoder(access) for access in db_role_access],
@@ -760,7 +674,7 @@ async def get_captcha():
     capthca_b64 = b64encode(buffered.getvalue()).decode()
     logger.info('get_captcha captcha_char={}', chr_4)
     # generate key, 生成简单的唯一id，
-    key = CAPTCHA_PREFIX + uuid.uuid4().hex[:8]
+    key = CAPTCHA_PREFIX + generate_uuid()[:8]
     redis_client.set(key, chr_4, expiration=300)
 
     # 增加配置，是否必须使用验证码

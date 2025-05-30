@@ -17,19 +17,17 @@ class ConfigKeyEnum(Enum):
     ASSISTANT_LLM = 'assistant_llm'  # 助手默认模型配置
     EVALUATION_LLM = 'evaluation_llm'  # 评测默认模型配置
     WORKFLOW_LLM = 'workflow_llm'  # 工作流默认模型配置
+    WORKSTATION = 'workstation'  # 工作台默认模型配置
 
 
 class ConfigBase(SQLModelSerializable):
     key: str = Field(index=True, unique=True)
     value: str = Field(sa_column=Column(Text))
-    comment: Optional[str] = Field(index=False)
-    create_time: Optional[datetime] = Field(sa_column=Column(
+    comment: Optional[str] = Field(default=None, index=False)
+    create_time: Optional[datetime] = Field(default=None, sa_column=Column(
         DateTime, nullable=False, index=True, server_default=text('CURRENT_TIMESTAMP')))
-    update_time: Optional[datetime] = Field(
-        sa_column=Column(DateTime,
-                         nullable=False,
-                         server_default=text('CURRENT_TIMESTAMP'),
-                         onupdate=text('CURRENT_TIMESTAMP')))
+    update_time: Optional[datetime] = Field(default=None, sa_column=Column(
+        DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP')))
 
 
 class Config(ConfigBase, table=True):
@@ -46,8 +44,8 @@ class ConfigCreate(ConfigBase):
 
 class ConfigUpdate(SQLModelSerializable):
     key: str
-    value: Optional[str]
-    comment: Optional[str]
+    value: Optional[str] = None
+    comment: Optional[str] = None
 
 
 class ConfigDao(ConfigBase):

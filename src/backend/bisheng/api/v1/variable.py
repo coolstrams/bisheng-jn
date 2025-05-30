@@ -1,11 +1,9 @@
 from typing import List, Optional
-from uuid import UUID
 
 from loguru import logger
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from sqlmodel import delete, select
 
-from bisheng.api.services.user_service import get_login_user
 from bisheng.api.v1.schemas import UnifiedResponseModel, resp_200
 from bisheng.database.base import session_getter
 from bisheng.database.models.flow_version import FlowVersionDao
@@ -15,7 +13,7 @@ from bisheng.database.models.variable_value import Variable, VariableCreate, Var
 router = APIRouter(prefix='/variable', tags=['variable'])
 
 
-@router.post('/', status_code=200, response_model=UnifiedResponseModel[VariableRead])
+@router.post('/', status_code=200)
 def post_variable(variable: Variable):
     try:
         if not variable.version_id:
@@ -49,14 +47,13 @@ def post_variable(variable: Variable):
         return HTTPException(status_code=500, detail=str(e))
 
 
-@router.get('/list', response_model=UnifiedResponseModel[List[VariableRead]], status_code=200)
+@router.get('/list')
 def get_variables(*,
                   flow_id: str,
                   node_id: Optional[str] = None,
                   variable_name: Optional[str] = None,
                   version_id: Optional[int] = None):
     try:
-        flow_id = UUID(flow_id).hex
         # 没传ID默认获取当前版本的数据
         if version_id is None:
             version_id = FlowVersionDao.get_version_by_flow(flow_id).id

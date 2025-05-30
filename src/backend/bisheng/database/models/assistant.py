@@ -1,13 +1,14 @@
 from datetime import datetime
 from enum import Enum
 from typing import List, Optional, Tuple
-from uuid import UUID, uuid4
+
+from sqlalchemy import JSON, Column, DateTime, Text, and_, func, or_, text
+from sqlmodel import Field, select
 
 from bisheng.database.base import session_getter
 from bisheng.database.models.base import SQLModelSerializable
 from bisheng.database.models.role_access import AccessType, RoleAccess
-from sqlalchemy import JSON, Column, DateTime, Text, and_, func, or_, text
-from sqlmodel import Field, select
+from bisheng.utils import generate_uuid
 
 
 class AssistantStatus(Enum):
@@ -16,44 +17,43 @@ class AssistantStatus(Enum):
 
 
 class AssistantBase(SQLModelSerializable):
-    id: Optional[UUID] = Field(nullable=False, primary_key=True, description='唯一ID')
+    id: Optional[str] = Field(default_factory=generate_uuid, nullable=False, primary_key=True, description='唯一ID')
     name: str = Field(default='', description='助手名称')
     logo: str = Field(default='', description='logo图片地址')
     desc: str = Field(default='', sa_column=Column(Text), description='助手描述')
     system_prompt: str = Field(default='', sa_column=Column(Text), description='系统提示词')
     prompt: str = Field(default='', sa_column=Column(Text), description='用户可见描述词')
     guide_word: Optional[str] = Field(default='', sa_column=Column(Text), description='开场白')
-    guide_question: Optional[List] = Field(sa_column=Column(JSON), description='引导问题')
+    guide_question: Optional[List] = Field(default_factory=list, sa_column=Column(JSON), description='引导问题')
     model_name: str = Field(default='', description='对应模型管理里模型的唯一ID')
     temperature: float = Field(default=0.5, description='模型温度')
     max_token: int = Field(default=32000, description='最大token数')
     status: int = Field(default=AssistantStatus.OFFLINE.value, description='助手是否上线')
     user_id: int = Field(default=0, description='创建用户ID')
     is_delete: int = Field(default=0, description='删除标志')
-    create_time: Optional[datetime] = Field(sa_column=Column(
+    create_time: Optional[datetime] = Field(default=None, sa_column=Column(
         DateTime, nullable=False, index=True, server_default=text('CURRENT_TIMESTAMP')))
-    update_time: Optional[datetime] = Field(
-        sa_column=Column(DateTime,
-                         nullable=False,
-                         server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')))
+    update_time: Optional[datetime] = Field(default=None,
+                                            sa_column=Column(DateTime,
+                                                             nullable=False,
+                                                             server_default=text(
+                                                                 'CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')))
 
 
 class AssistantLinkBase(SQLModelSerializable):
-    id: Optional[int] = Field(nullable=False, primary_key=True, description='唯一ID')
-    assistant_id: Optional[UUID] = Field(index=True, description='助手ID')
+    id: Optional[int] = Field(default=None, nullable=False, primary_key=True, description='唯一ID')
+    assistant_id: Optional[str] = Field(default=0, index=True, description='助手ID')
     tool_id: Optional[int] = Field(default=0, index=True, description='工具ID')
     flow_id: Optional[str] = Field(default='', index=True, description='技能ID')
     knowledge_id: Optional[int] = Field(default=0, index=True, description='知识库ID')
-    create_time: Optional[datetime] = Field(sa_column=Column(
+    create_time: Optional[datetime] = Field(default=None, sa_column=Column(
         DateTime, nullable=False, index=True, server_default=text('CURRENT_TIMESTAMP')))
-    update_time: Optional[datetime] = Field(
-        sa_column=Column(DateTime,
-                         nullable=False,
-                         server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')))
+    update_time: Optional[datetime] = Field(default=None, sa_column=Column(
+        DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')))
 
 
 class Assistant(AssistantBase, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True, unique=True)
+    id: str = Field(default_factory=generate_uuid, primary_key=True, unique=True)
 
 
 class AssistantLink(AssistantLinkBase, table=True):
@@ -88,13 +88,13 @@ class AssistantDao(AssistantBase):
             return data
 
     @classmethod
-    def get_one_assistant(cls, assistant_id: UUID) -> Assistant:
+    def get_one_assistant(cls, assistant_id: str) -> Assistant:
         with session_getter() as session:
             statement = select(Assistant).where(Assistant.id == assistant_id)
             return session.exec(statement).first()
 
     @classmethod
-    def get_assistants_by_ids(cls, assistant_ids: List[UUID]) -> List[Assistant]:
+    def get_assistants_by_ids(cls, assistant_ids: List[str]) -> List[Assistant]:
         with session_getter() as session:
             statement = select(Assistant).where(Assistant.id.in_(assistant_ids))
             return session.exec(statement).all()
@@ -108,8 +108,8 @@ class AssistantDao(AssistantBase):
             return session.exec(statement).first()
 
     @classmethod
-    def get_assistants(cls, user_id: int, name: str, assistant_ids_extra: List[UUID],
-                       status: Optional[int], page: int, limit: int, assistant_ids: List[UUID] = None) -> (
+    def get_assistants(cls, user_id: int, name: str, assistant_ids_extra: List[str],
+                       status: Optional[int], page: int, limit: int, assistant_ids: List[str] = None) -> (
             List[Assistant], int):
         with session_getter() as session:
             count_statement = session.query(func.count(
@@ -150,7 +150,7 @@ class AssistantDao(AssistantBase):
             return session.exec(statement).all(), session.exec(count_statement).scalar()
 
     @classmethod
-    def get_all_online_assistants(cls, flow_ids: List[UUID]) -> List[Assistant]:
+    def get_all_online_assistants(cls, flow_ids: List[str]) -> List[Assistant]:
         """ 获取所有已上线的助手 """
         statement = select(Assistant).filter(Assistant.status == AssistantStatus.ONLINE.value,
                                              Assistant.is_delete == 0)
@@ -161,7 +161,7 @@ class AssistantDao(AssistantBase):
             return session.exec(statement).all()
 
     @classmethod
-    def get_all_assistants(cls, name: str, page: int, limit: int, assistant_ids: List[UUID] = None,
+    def get_all_assistants(cls, name: str, page: int, limit: int, assistant_ids: List[str] = None,
                            status: int = None) -> (List[Assistant], int):
         with session_getter() as session:
             statement = select(Assistant).where(Assistant.is_delete == 0)
@@ -216,7 +216,7 @@ class AssistantDao(AssistantBase):
             return session.exec(count_statement.where(*filters)).scalar()
 
     @classmethod
-    def filter_assistant_by_id(cls, assistant_ids: List[UUID], keywords: str = None, page: int = 0,
+    def filter_assistant_by_id(cls, assistant_ids: List[str], keywords: str = None, page: int = 0,
                                limit: int = 0) -> (List[Assistant], int):
         """
         根据关键字和助手id过滤出对应的助手
@@ -248,7 +248,7 @@ class AssistantLinkDao(AssistantLink):
 
     @classmethod
     def insert_batch(cls,
-                     assistant_id: UUID,
+                     assistant_id: str,
                      tool_list: List[int] = None,
                      flow_list: List[str] = None):
         if not tool_list and not flow_list:
@@ -267,13 +267,13 @@ class AssistantLinkDao(AssistantLink):
             session.commit()
 
     @classmethod
-    def get_assistant_link(cls, assistant_id: UUID) -> List[AssistantLink]:
+    def get_assistant_link(cls, assistant_id: str) -> List[AssistantLink]:
         with session_getter() as session:
             statement = select(AssistantLink).where(AssistantLink.assistant_id == assistant_id)
             return session.exec(statement).all()
 
     @classmethod
-    def update_assistant_tool(cls, assistant_id: UUID, tool_list: List[int]):
+    def update_assistant_tool(cls, assistant_id: str, tool_list: List[int]):
         with session_getter() as session:
             session.query(AssistantLink).filter(AssistantLink.assistant_id == assistant_id,
                                                 AssistantLink.tool_id != 0).delete()
@@ -284,7 +284,7 @@ class AssistantLinkDao(AssistantLink):
             session.commit()
 
     @classmethod
-    def update_assistant_flow(cls, assistant_id: UUID, flow_list: List[str]):
+    def update_assistant_flow(cls, assistant_id: str, flow_list: List[str]):
         with session_getter() as session:
             session.query(AssistantLink).filter(AssistantLink.assistant_id == assistant_id,
                                                 AssistantLink.flow_id != '',
@@ -296,7 +296,7 @@ class AssistantLinkDao(AssistantLink):
             session.commit()
 
     @classmethod
-    def update_assistant_knowledge(cls, assistant_id: UUID, knowledge_list: List[int],
+    def update_assistant_knowledge(cls, assistant_id: str, knowledge_list: List[int],
                                    flow_id: str):
         # 保存知识库关联时必须有技能ID
         with session_getter() as session:

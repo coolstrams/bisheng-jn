@@ -4,37 +4,41 @@ from typing import Any, List, Optional, Union
 
 from bisheng.database.base import session_getter
 from bisheng.database.models.base import SQLModelSerializable
-from bisheng.database.models.knowledge_file import KnowledgeFile
+from bisheng.database.models.knowledge_file import KnowledgeFile, KnowledgeFileDao
 from bisheng.database.models.role_access import AccessType, RoleAccessDao
 from bisheng.database.models.user import UserDao
 from bisheng.database.models.user_role import UserRoleDao
-from langchain.pydantic_v1 import BaseModel
-from sqlalchemy import Column, DateTime, delete, func, text, update
-from sqlmodel import Field, or_, select
+from pydantic import BaseModel, field_validator
+from sqlmodel import Column, DateTime, Field, delete, func, or_, select, text, update, CHAR
 from sqlmodel.sql.expression import Select, SelectOfScalar
 
 
 class KnowledgeTypeEnum(Enum):
     QA = 1
     NORMAL = 0
+    PRIVATE = 2
 
 
 class KnowledgeBase(SQLModelSerializable):
-    user_id: Optional[int] = Field(index=True)
+    user_id: Optional[int] = Field(default=None, index=True)
     name: str = Field(index=True, min_length=1, max_length=30, description='知识库名, 最少一个字符，最多30个字符')
     type: int = Field(index=False, default=0, description='0 为普通知识库，1 为QA知识库')
-    description: Optional[str] = Field(index=True)
-    model: Optional[str] = Field(index=False)
-    collection_name: Optional[str] = Field(index=False)
-    index_name: Optional[str] = Field(index=False)
+    description: Optional[str] = Field(default=None, index=True)
+    model: Optional[str] = Field(default=None, index=False)
+    collection_name: Optional[str] = Field(default=None, index=False)
+    index_name: Optional[str] = Field(default=None, index=False)
     state: Optional[int] = Field(index=False, default=1, description='0 为未发布，1 为已发布, 2 为复制中')
-    create_time: Optional[datetime] = Field(
-        sa_column=Column(DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP')))
-    update_time: Optional[datetime] = Field(
-        sa_column=Column(DateTime,
-                         nullable=True,
-                         server_default=text('CURRENT_TIMESTAMP'),
-                         onupdate=text('CURRENT_TIMESTAMP')))
+    create_time: Optional[datetime] = Field(default=None, sa_column=Column(
+        DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP')))
+    update_time: Optional[datetime] = Field(default=None, sa_column=Column(
+        DateTime, nullable=True, server_default=text('CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP')))
+
+    @field_validator('model', mode='before')
+    @classmethod
+    def convert_model(cls, v: Any) -> str:
+        if isinstance(v, int):
+            v = str(v)
+        return v
 
 
 class Knowledge(KnowledgeBase, table=True):
@@ -43,14 +47,14 @@ class Knowledge(KnowledgeBase, table=True):
 
 class KnowledgeRead(KnowledgeBase):
     id: int
-    user_name: Optional[str]
-    copiable: Optional[bool]
+    user_name: Optional[str] = None
+    copiable: Optional[bool] = None
 
 
 class KnowledgeUpdate(BaseModel):
     knowledge_id: int
-    name: Optional[str]
-    description: Optional[str]
+    name: Optional[str] = None
+    description: Optional[str] = None
 
 
 class KnowledgeCreate(KnowledgeBase):
@@ -94,15 +98,16 @@ class KnowledgeDao(KnowledgeBase):
             return session.exec(select(Knowledge).where(Knowledge.id.in_(ids))).all()
 
     @classmethod
-    def _user_knowledge_filters(cls,
-                                statement: Any,
-                                user_id: int,
-                                knowledge_id_extra: List[int] = None,
-                                knowledge_type: KnowledgeTypeEnum = None,
-                                name: str = None,
-                                page: int = 0,
-                                limit: int = 0,
-                                filter_knowledge: List[int] = None) -> Union[Select, SelectOfScalar]:
+    def _user_knowledge_filters(
+            cls,
+            statement: Any,
+            user_id: int,
+            knowledge_id_extra: List[int] = None,
+            knowledge_type: KnowledgeTypeEnum = None,
+            name: str = None,
+            page: int = 0,
+            limit: int = 0,
+            filter_knowledge: List[int] = None) -> Union[Select, SelectOfScalar]:
         if knowledge_id_extra:
             statement = statement.where(
                 or_(Knowledge.id.in_(knowledge_id_extra), Knowledge.user_id == user_id))
@@ -112,8 +117,16 @@ class KnowledgeDao(KnowledgeBase):
             statement = statement.where(Knowledge.id.in_(filter_knowledge))
         if knowledge_type:
             statement = statement.where(Knowledge.type == knowledge_type.value)
+        else:
+            statement = statement.where(Knowledge.type != KnowledgeTypeEnum.PRIVATE.value)
         if name:
-            statement = statement.where(Knowledge.name.like(f'%{name}%'))
+            # 同时模糊检索知识库内的文件名称来查询对应的知识库
+            file_knowledge_ids = KnowledgeFileDao.get_knowledge_ids_by_name(name)
+            if file_knowledge_ids:
+                statement = statement.where(
+                    or_(Knowledge.name.like(f'%{name}%'), Knowledge.id.in_(file_knowledge_ids)))
+            else:
+                statement = statement.where(Knowledge.name.like(f'%{name}%'))
         if page and limit:
             statement = statement.offset((page - 1) * limit).limit(limit)
         return statement
@@ -130,7 +143,8 @@ class KnowledgeDao(KnowledgeBase):
         statement = select(Knowledge).where(Knowledge.state > 0)
 
         statement = cls._user_knowledge_filters(statement, user_id, knowledge_id_extra,
-                                                knowledge_type, name, page, limit, filter_knowledge)
+                                                knowledge_type, name, page, limit,
+                                                filter_knowledge)
 
         statement = statement.order_by(Knowledge.update_time.desc())
         with session_getter() as session:
@@ -187,14 +201,14 @@ class KnowledgeDao(KnowledgeBase):
                                                           AccessType.KNOWLEDGE)
 
         # 查询是否包含了用户自己创建的知识库
-        user_knowledge_list = cls.get_user_knowledge(user_info.user_id, filter_knowledge=knowledge_ids)
+        user_knowledge_list = cls.get_user_knowledge(user_info.user_id,
+                                                     filter_knowledge=knowledge_ids)
         if not role_access_list and not user_knowledge_list:
             return []
 
         finally_knowledge_list = [access.third_id for access in role_access_list]
         finally_knowledge_list.extend([str(one.id) for one in user_knowledge_list])
-        statement = select(Knowledge).where(
-            Knowledge.id.in_(finally_knowledge_list))
+        statement = select(Knowledge).where(Knowledge.id.in_(finally_knowledge_list))
 
         with session_getter() as session:
             return session.exec(statement).all()
@@ -228,16 +242,33 @@ class KnowledgeDao(KnowledgeBase):
             return session.exec(statement).all(), session.scalar(count_statement)
 
     @classmethod
+    def generate_all_knowledge_filter(cls,
+                                      statement,
+                                      name: str = None,
+                                      knowledge_type: KnowledgeTypeEnum = None):
+        if knowledge_type:
+            statement = statement.where(Knowledge.type == knowledge_type.value)
+        if name:
+            # 同时模糊检索知识库内的文件名称来查询对应的知识库
+            file_knowledge_ids = KnowledgeFileDao.get_knowledge_ids_by_name(name)
+            if file_knowledge_ids:
+                statement = statement.where(
+                    or_(Knowledge.name.like(f'%{name}%'), Knowledge.id.in_(file_knowledge_ids)))
+            else:
+                statement = statement.where(Knowledge.name.like(f'%{name}%'))
+        return statement
+
+    @classmethod
     def get_all_knowledge(cls,
                           name: str = None,
                           knowledge_type: KnowledgeTypeEnum = None,
                           page: int = 0,
                           limit: int = 0) -> List[Knowledge]:
         statement = select(Knowledge).where(Knowledge.state > 0)
-        if knowledge_type:
-            statement = statement.where(Knowledge.type == knowledge_type.value)
-        if name:
-            statement = statement.where(Knowledge.name.like(f'%{name}%'))
+        statement = cls.generate_all_knowledge_filter(statement,
+                                                      name=name,
+                                                      knowledge_type=knowledge_type)
+
         if page and limit:
             statement = statement.offset((page - 1) * limit).limit(limit)
         statement = statement.order_by(Knowledge.update_time.desc())
@@ -249,10 +280,9 @@ class KnowledgeDao(KnowledgeBase):
                             name: str = None,
                             knowledge_type: KnowledgeTypeEnum = None) -> int:
         statement = select(func.count(Knowledge.id)).where(Knowledge.state > 0)
-        if knowledge_type:
-            statement = statement.where(Knowledge.type == knowledge_type.value)
-        if name:
-            statement = statement.where(Knowledge.name.like(f'%{name}%'))
+        statement = cls.generate_all_knowledge_filter(statement,
+                                                      name=name,
+                                                      knowledge_type=knowledge_type)
         with session_getter() as session:
             return session.scalar(statement)
 

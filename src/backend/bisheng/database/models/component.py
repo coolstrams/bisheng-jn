@@ -1,10 +1,11 @@
 from datetime import datetime
 from typing import Any, List, Optional
-from uuid import UUID, uuid4
+
+from sqlmodel import JSON, Column, DateTime, Field, select, text
 
 from bisheng.database.base import session_getter
 from bisheng.database.models.base import SQLModelSerializable
-from sqlmodel import JSON, Column, DateTime, Field, select, text
+from bisheng.utils import generate_uuid
 
 
 class ComponentBase(SQLModelSerializable):
@@ -14,14 +15,14 @@ class ComponentBase(SQLModelSerializable):
     version: str = Field(default='', index=True, description='组件版本')
     user_id: int = Field(default=None, index=True, description='创建人ID')
     user_name: str = Field(default=None, description='创建人姓名')
-    create_time: Optional[datetime] = Field(sa_column=Column(
+    create_time: Optional[datetime] = Field(default=None, sa_column=Column(
         DateTime, nullable=False, index=True, server_default=text('CURRENT_TIMESTAMP')))
-    update_time: Optional[datetime] = Field(sa_column=Column(
+    update_time: Optional[datetime] = Field(default=None, sa_column=Column(
         DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')))
 
 
 class Component(ComponentBase, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True, unique=True)
+    id: str = Field(default_factory=generate_uuid, primary_key=True, unique=True)
     data: Optional[Any] = Field(default=None, sa_column=Column(JSON))
 
 

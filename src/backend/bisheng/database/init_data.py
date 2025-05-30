@@ -12,8 +12,9 @@ from bisheng.database.init_config import init_config
 from bisheng.database.base import session_getter, db_service
 from bisheng.settings import settings
 from bisheng.cache.redis import redis_client
+from bisheng.database.constants import AdminRole, DefaultRole
 from bisheng.database.models.component import Component
-from bisheng.database.models.role import Role, AdminRole, DefaultRole
+from bisheng.database.models.role import Role
 from bisheng.database.models.user import User
 from bisheng.database.models.gpts_tools import GptsTools
 from bisheng.database.models.gpts_tools import GptsToolsType
@@ -172,7 +173,7 @@ def read_from_conf(file_path: str) -> str:
 def upload_preset_minio_file():
     """ 上传预置文件到minio, 为了和工作流模板配合 """
     minio_client = MinioClient()
-    # 上传 「多助手并行+穿行报告生成」 工作流模板需要的docx文件
+    # 上传 「多助手并行+串行报告生成」 工作流模板需要的docx文件
     template_data = read_from_conf('data/0254d1808a5247d2a3ee0d0011819acb.docx')
     minio_client.upload_minio_data('workflow/report/0254d1808a5247d2a3ee0d0011819acb.docx', template_data,
                                    len(template_data), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')

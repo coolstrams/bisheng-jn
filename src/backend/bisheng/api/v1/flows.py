@@ -1,6 +1,5 @@
 import json
 from typing import Any
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi_jwt_auth import AuthJWT
@@ -41,7 +40,7 @@ def create_flow(*, request: Request, flow: FlowCreate, login_user: UserPayload =
     # 创建新的技能
     db_flow = FlowDao.create_flow(db_flow,FlowType.FLOW.value)
 
-    current_version = FlowVersionDao.get_version_by_flow(db_flow.id.hex)
+    current_version = FlowVersionDao.get_version_by_flow(db_flow.id)
     ret = FlowRead.model_validate(db_flow)
     ret.version_id = current_version.id
     FlowService.create_flow_hook(request, login_user, db_flow, ret.version_id)
@@ -49,20 +48,19 @@ def create_flow(*, request: Request, flow: FlowCreate, login_user: UserPayload =
 
 
 @router.get('/versions', status_code=200)
-def get_versions(*, flow_id: UUID, Authorize: AuthJWT = Depends()):
+def get_versions(*, flow_id: str, Authorize: AuthJWT = Depends()):
     """
     获取技能对应的版本列表
     """
     Authorize.jwt_required()
     payload = json.loads(Authorize.get_jwt_subject())
     user = UserPayload(**payload)
-    flow_id = flow_id.hex
     return FlowService.get_version_list_by_flow(user, flow_id)
 
 
 @router.post('/versions', status_code=200)
 def create_versions(*,
-                    flow_id: UUID,
+                    flow_id: str,
                     flow_version: FlowVersionCreate,
                     Authorize: AuthJWT = Depends()):
     """
@@ -71,7 +69,6 @@ def create_versions(*,
     Authorize.jwt_required()
     payload = json.loads(Authorize.get_jwt_subject())
     user = UserPayload(**payload)
-    flow_id = flow_id.hex
     return FlowService.create_new_version(user, flow_id, flow_version)
 
 
@@ -112,13 +109,12 @@ def get_version_info(*, version_id: int, Authorize: AuthJWT = Depends()):
 @router.post('/change_version', status_code=200)
 def change_version(*,
                    request: Request,
-                   flow_id: UUID = Query(default=None, description='技能唯一ID'),
+                   flow_id: str = Query(default=None, description='技能唯一ID'),
                    version_id: int = Query(default=None, description='需要设置的当前版本ID'),
                    login_user: UserPayload = Depends(get_login_user)):
     """
     修改当前版本
     """
-    flow_id = flow_id.hex
     return FlowService.change_current_version(request, login_user, flow_id, version_id)
 
 
@@ -141,22 +137,20 @@ def read_flows(*,
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get('/{flow_id}', response_model=UnifiedResponseModel[FlowReadWithStyle], status_code=200)
-def read_flow(*, flow_id: UUID, login_user: UserPayload = Depends(get_login_user)):
+@router.get('/{flow_id}')
+def read_flow(*, flow_id: str, login_user: UserPayload = Depends(get_login_user)):
     """Read a flow."""
-    return FlowService.get_one_flow(login_user, flow_id.hex)
+    return FlowService.get_one_flow(login_user, flow_id)
 
 
-@router.patch('/{flow_id}', response_model=UnifiedResponseModel[FlowRead], status_code=200)
+@router.patch('/{flow_id}')
 async def update_flow(*,
                       request: Request,
-                      flow_id: UUID,
+                      flow_id: str,
                       flow: FlowUpdate,
                       login_user: UserPayload = Depends(get_login_user)):
     """Update a flow."""
-    flow_id = flow_id.hex
-    with session_getter() as session:
-        db_flow = session.get(Flow, flow_id)
+    db_flow = FlowDao.get_flow_by_id(flow_id)
     if not db_flow:
         raise HTTPException(status_code=404, detail='Flow not found')
 
@@ -197,28 +191,28 @@ async def update_flow(*,
 @router.delete('/{flow_id}', status_code=200)
 def delete_flow(*,
                 request: Request,
-                flow_id: UUID,
+                flow_id: str,
                 login_user: UserPayload = Depends(get_login_user)):
     """Delete a flow."""
 
-    db_flow = FlowDao.get_flow_by_id(flow_id.hex)
+    db_flow = FlowDao.get_flow_by_id(flow_id)
     if not db_flow:
         raise HTTPException(status_code=404, detail='Flow not found')
-    if not login_user.access_check(db_flow.user_id, flow_id.hex, AccessType.FLOW_WRITE):
+    if not login_user.access_check(db_flow.user_id, flow_id, AccessType.FLOW_WRITE):
         return UnAuthorizedError.return_resp()
     FlowDao.delete_flow(db_flow)
     FlowService.delete_flow_hook(request, login_user, db_flow)
     return resp_200(message='删除成功')
 
 
-@router.get('/download/', response_model=UnifiedResponseModel[FlowListRead], status_code=200)
+@router.get('/download/')
 async def download_file():
     """Download all flows as a file."""
     flows = read_flows()
     return resp_200(FlowListRead(flows=flows))
 
 
-@router.post('/compare', response_model=UnifiedResponseModel, status_code=200)
+@router.post('/compare')
 async def compare_flow_node(*, item: FlowCompareReq, Authorize: AuthJWT = Depends()):
     """ 技能多版本对比 """
     Authorize.jwt_required()

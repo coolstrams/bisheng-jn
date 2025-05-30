@@ -19,6 +19,8 @@ class LLMNode(BaseNode):
         # 是否输出结果给用户
         self._output_user = self.node_params.get('output_user', False)
 
+        self._image_prompt = self.node_params.get('image_prompt', [])
+
         # 初始化prompt
         self._system_prompt = PromptTemplateParser(template=self.node_params['system_prompt'])
         self._system_variables = self._system_prompt.extract()
@@ -34,6 +36,8 @@ class LLMNode(BaseNode):
         # 初始化llm对象
         self._stream = True
         self._llm = LLMService.get_bisheng_llm(model_id=self.node_params['model_id'],
+                                               temperature=self.node_params.get(
+                                                   'temperature', 0.3),
                                                params={'stream': self._stream},
                                                cache=False)
 
@@ -111,7 +115,15 @@ class LLMNode(BaseNode):
         inputs = []
         if system:
             inputs.append(SystemMessage(content=system))
-        inputs.append(HumanMessage(content=user))
+
+        human_message = HumanMessage(content=[{
+            'type': 'text',
+            'text': user
+        }])
+        human_message = self.contact_file_into_prompt(human_message, self._image_prompt)
+        inputs.append(human_message)
+
+        logger.debug(f'llm invoke chat_history: {inputs} {self._image_prompt}')
 
         result = self._llm.invoke(inputs, config=config)
 

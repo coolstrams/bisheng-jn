@@ -1,11 +1,12 @@
 from datetime import datetime
 from typing import List, Optional, Tuple
-from uuid import UUID, uuid4
+
+from sqlalchemy import func
+from sqlmodel import Column, DateTime, Field, select, text
 
 from bisheng.database.base import session_getter
 from bisheng.database.models.base import SQLModelSerializable
-from sqlalchemy import func
-from sqlmodel import Column, DateTime, Field, select, text
+from bisheng.utils import generate_uuid
 
 
 # Finetune任务的预置训练集
@@ -16,16 +17,14 @@ class PresetTrainBase(SQLModelSerializable):
     user_id: str = Field(default='', index=True, description='创建人ID')
     user_name: str = Field(default='', index=True, description='创建人姓名')
     type: int = Field(default=0, index=True, description='0 文件 1 QA')
-    create_time: Optional[datetime] = Field(sa_column=Column(
+    create_time: Optional[datetime] = Field(default=None, sa_column=Column(
         DateTime, nullable=False, index=True, server_default=text('CURRENT_TIMESTAMP')))
-    update_time: Optional[datetime] = Field(
-        sa_column=Column(DateTime,
-                         nullable=False,
-                         server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')))
+    update_time: Optional[datetime] = Field(default=None, sa_column=Column(
+        DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')))
 
 
 class PresetTrain(PresetTrainBase, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True, unique=True)
+    id: str = Field(default_factory=generate_uuid, primary_key=True, unique=True)
 
 
 class PresetTrainDao(PresetTrainBase):
@@ -48,7 +47,7 @@ class PresetTrainDao(PresetTrainBase):
         return True
 
     @classmethod
-    def find_one(cls, file_id: UUID) -> PresetTrain | None:
+    def find_one(cls, file_id: str) -> PresetTrain | None:
         with session_getter() as session:
             statement = select(PresetTrain).where(PresetTrain.id == file_id)
             return session.exec(statement).first()

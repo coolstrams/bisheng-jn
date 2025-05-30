@@ -14,6 +14,7 @@ from langchain.schema import AgentFinish, LLMResult
 from langchain.schema.agent import AgentAction
 from langchain.schema.document import Document
 from langchain.schema.messages import BaseMessage
+from langchain_core.messages import ToolMessage
 
 
 # https://github.com/hwchase17/chat-langchain/blob/master/callback.py
@@ -44,12 +45,12 @@ class AsyncStreamingLLMCallbackHandler(AsyncCallbackHandler):
         self.stream_queue: Queue = kwargs.get('stream_queue')
 
     async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
-        logger.debug(f'on_llm_new_token token={token} kwargs={kwargs}')
         chunk = kwargs.get('chunk')
         # azure偶尔会返回一个None
         if token is None and chunk is None:
             return
-        reasoning_content = getattr(chunk.message, 'additional_kwargs', {}).get('reasoning_content')
+        reasoning_content = getattr(chunk.message, 'additional_kwargs',
+                                    {}).get('reasoning_content')
         if token is None:
             token = ''
         resp = ChatResponse(message={
@@ -120,7 +121,7 @@ class AsyncStreamingLLMCallbackHandler(AsyncCallbackHandler):
         observation_prefix = kwargs.get('observation_prefix', 'Tool output: ')
         # from langchain.docstore.document import Document # noqa
         # result = eval(output).get('result')
-        result = output
+        result = output if isinstance(output, str) else getattr(output, 'content', output)
 
         # Create a formatted message.
         intermediate_steps = f'{observation_prefix}{result[:100]}'
@@ -332,7 +333,7 @@ class StreamingLLMCallbackHandler(BaseCallbackHandler):
 
         # from langchain.docstore.document import Document # noqa
         # result = eval(output).get('result')
-        result = output
+        result = output if isinstance(output, str) else getattr(output, 'content', output)
         # Create a formatted message.
         intermediate_steps = f'{observation_prefix}{result}'
 
@@ -495,12 +496,13 @@ class AsyncGptsDebugCallbackHandler(AsyncGptsLLMCallbackHandler):
                             extra=json.dumps({'run_id': kwargs.get('run_id').hex}))
         await self.websocket.send_json(resp.dict())
 
-    async def on_tool_end(self, output: str, **kwargs: Any) -> Any:
+    async def on_tool_end(self, output: ToolMessage, **kwargs: Any) -> Any:
         """Run when tool ends running."""
+        output = output.content
         logger.debug(f'on_tool_end output={output} kwargs={kwargs}')
         observation_prefix = kwargs.get('observation_prefix', 'Tool output: ')
 
-        result = output
+        result = output if isinstance(output, str) else getattr(output, 'content', output)
         # Create a formatted message.
         intermediate_steps = f'{observation_prefix}\n\n{result}'
         tool_name, tool_category = self.parse_tool_category(kwargs.get('name'))

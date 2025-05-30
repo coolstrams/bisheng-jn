@@ -1,6 +1,6 @@
 from typing import Dict, Optional
-from uuid import UUID, uuid4
 
+from bisheng.utils import generate_uuid
 from fastapi.encoders import jsonable_encoder
 from langchain.memory import ConversationBufferWindowMemory
 
@@ -63,7 +63,7 @@ class WorkFlowService(BaseService):
         # 技能创建用户的ID列表
         user_ids = []
         for one in data:
-            one['id'] = one['id'].hex
+            one['id'] = one['id']
             resource_ids.append(one['id'])
             user_ids.append(one['user_id'])
         # 获取列表内的用户信息
@@ -95,7 +95,7 @@ class WorkFlowService(BaseService):
             one['group_ids'] = resource_group_dict.get(one['id'], [])
             one['tags'] = resource_tag_dict.get(one['id'], [])
             one['logo'] = cls.get_logo_share_link(one['logo'])
-            one['id'] = UUID(one['id'])
+            one['id'] = one['id']
 
         return data, total
 
@@ -133,7 +133,7 @@ class WorkFlowService(BaseService):
             for key, val in node_input.items():
                 graph_state.set_variable_by_str(key, val)
 
-        exec_id = uuid4().hex
+        exec_id = generate_uuid()
         result = node._run(exec_id)
         log_data = node.parse_log(exec_id, result)
         res = []
@@ -258,8 +258,17 @@ class WorkFlowService(BaseService):
                     key=event_input_schema.get('key'),
                     type='text',
                     required=True,
+                    value=''
                 )
             ]
+            for one in event_input_schema.get('value', []):
+                tmp = WorkflowInputItem(**one)
+                if tmp.key == 'dialog_files_content':
+                    tmp.type = 'dialog_file'
+                    tmp.value = []
+                elif tmp.key == 'dialog_file_accept':
+                    tmp.type = 'dialog_file_accept'
+                input_schema.value.append(tmp)
         workflow_event.input_schema = input_schema
         return workflow_event
 

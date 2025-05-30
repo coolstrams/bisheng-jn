@@ -7,6 +7,8 @@ import sys
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import requests
+from pydantic import ConfigDict, model_validator, Field
+
 from bisheng_langchain.utils.requests import Requests
 from langchain.callbacks.manager import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
 from langchain.chat_models.base import BaseChatModel
@@ -15,7 +17,6 @@ from langchain.schema.messages import (AIMessage, BaseMessage, ChatMessage, Func
                                        HumanMessage, SystemMessage)
 from langchain.utils import get_from_dict_or_env
 from langchain_core.language_models.llms import create_base_retry_decorator
-from langchain_core.pydantic_v1 import Field, root_validator
 
 # from requests.exceptions import HTTPError
 
@@ -112,6 +113,7 @@ class BaseHostChatLLM(BaseChatModel):
     model_kwargs: Optional[Dict[str, Any]] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     host_base_url: Optional[str] = None
+    is_ssl: Optional[bool] = False
 
     headers: Optional[Dict[str, str]] = Field(default_factory=dict)
 
@@ -137,13 +139,10 @@ class BaseHostChatLLM(BaseChatModel):
     verbose: Optional[bool] = False
 
     decoupled: Optional[bool] = False
+    model_config = ConfigDict(validate_by_name=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
-
-    @root_validator()
+    @model_validator(mode='before')
+    @classmethod
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values['host_base_url'] = get_from_dict_or_env(values, 'host_base_url', 'HostBaseUrl')
@@ -170,7 +169,13 @@ class BaseHostChatLLM(BaseChatModel):
                 headers = values['headers']
             else:
                 headers = {'Content-Type': 'application/json'}
-            values['client'] = Requests(headers=headers, request_timeout=values['request_timeout'])
+            if cls.is_ssl and "https" in values['host_base_url']:
+                import aiohttp
+                values['client'] = Requests(headers=headers,
+                                            aiosession=aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)),
+                                            request_timeout=values['request_timeout'])
+            else:
+                values['client'] = Requests(headers=headers, request_timeout=values['request_timeout'])
         except AttributeError:
             raise ValueError('Try upgrading it with `pip install --upgrade requests`.')
         return values
