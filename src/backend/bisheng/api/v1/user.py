@@ -50,7 +50,7 @@ router = APIRouter(prefix='', tags=['User'])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
 
-@router.post('/user/regist', response_model=UnifiedResponseModel[UserRead], status_code=201)
+@router.post('/user/regist')
 async def regist(*, user: UserCreate):
     # 验证码校验
     if settings.get_from_db('use_captcha'):
@@ -81,7 +81,7 @@ async def regist(*, user: UserCreate):
     return resp_200(db_user)
 
 
-@router.get("/user/ssocLogin", response_model=UnifiedResponseModel[UserRead], status_code=201)
+@router.get("/user/ssocLogin")
 async def ssoc_login(*, ticket, serverip, urlport, socketport, urlpath, appid, Authorize: AuthJWT = Depends()):
     userId = ''
     try:
@@ -162,7 +162,7 @@ async def ssoc_login(*, ticket, serverip, urlport, socketport, urlpath, appid, A
         raise HTTPException(status_code=500, detail='用户不存在')
 
 
-@router.post('/user/sso', response_model=UnifiedResponseModel[UserRead], status_code=201)
+@router.post('/user/sso')
 async def sso(*, request: Request, user: UserCreate):
     """ 给闭源网关提供的登录接口 """
     if settings.get_system_login_method().bisheng_pro:  # 判断sso 是否打开
@@ -209,7 +209,7 @@ def clear_error_password_key(username: str):
     redis_client.delete(error_key)
 
 
-@router.post('/user/login', response_model=UnifiedResponseModel[UserRead], status_code=201)
+@router.post('/user/login')
 async def login(*, request: Request, user: UserLogin, Authorize: AuthJWT = Depends()):
     # 验证码校验
     if settings.get_from_db('use_captcha'):
@@ -270,7 +270,7 @@ async def login(*, request: Request, user: UserLogin, Authorize: AuthJWT = Depen
     return resp_200(UserRead(role=str(role), web_menu=web_menu, access_token=access_token, **db_user.__dict__))
 
 
-@router.get('/user/admin', response_model=UnifiedResponseModel[UserRead], status_code=200)
+@router.get('/user/admin')
 async def get_admins(login_user: UserPayload = Depends(get_login_user)):
     """
     获取所有的超级管理员账号
@@ -289,7 +289,7 @@ async def get_admins(login_user: UserPayload = Depends(get_login_user)):
         raise HTTPException(status_code=500, detail='用户信息失败')
 
 
-@router.get('/user/info', response_model=UnifiedResponseModel[UserRead], status_code=201)
+@router.get('/user/info')
 async def get_info(login_user: UserPayload = Depends(get_login_user)):
     # check if user already exist
     try:
