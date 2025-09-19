@@ -3,6 +3,7 @@
 database_url:
   # "mysql+pymysql://root:gAAAAABlp4b4c59FeVGF_OQRVf6NOUIGdxq8246EBD-b0hdK_jVKRs1x4PoAn0A6C5S6IiFKmWn0Nm5eBUWu-7jxcqw6TiVjQA==@mysql:3306/bisheng?charset=utf8mb4"
   "mysql+pymysql://bisheng:gAAAAABm5Sid6uzSmBzS8MtEyXFibXkuQQxlUjBajPdfaaIrTqqoe7AWJ8W3uRwhOszlnF_gdlf8X5-pFw1Is-fZ9dBNwax3wA==@10.3.96.19:3306/bisheng?charset=utf8mb4"
+  # "dm+dmPython://bisheng:gAAAAABomugPfbyZ1jMPgkk9FSh7u0O6vPnhvGncER6RXWoRyn8ZzC5_klCAxQK8ChhsUY_mSSgqxrOeeP7lPZKBSV_idRUoRw==@10.3.96.17:5236/bisheng?charset=UTF-8"
 
 # 缓存配置  redis://[[username]:[password]]@localhost:6379/0
 # 普通模式:
