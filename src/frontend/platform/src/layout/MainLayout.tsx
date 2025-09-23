@@ -31,6 +31,7 @@ import { logoutApi } from "../controllers/API/user";
 import { captureAndAlertRequestErrorHoc } from "../controllers/request";
 import { User } from "../types/api/user";
 import HeaderMenu from "./HeaderMenu";
+import json from "../../package.json";
 
 export default function MainLayout() {
     const { dark, setDark } = useContext(darkContext);
@@ -77,11 +78,12 @@ export default function MainLayout() {
                 <div className="flex h-9 my-[14px]">
                     <Link className="inline-block" to='/'>
                         {/* @ts-ignore */}
-                        <img src={__APP_ENV__.BASE_URL + '/login-logo-small-jn.png'} className="w-[104px] ml-[38px] rounded dark:w-[104px]" alt="" />
+                        <img src={__APP_ENV__.BASE_URL + '/login-logo-small-jn.png'}
+                             className="w-[104px] ml-[38px] rounded dark:w-[104px]" alt=""/>
                     </Link>
                 </div>
                 <div>
-                    <HeaderMenu />
+                    <HeaderMenu/>
                 </div>
                 <div className="flex w-fit relative z-10">
                     <div className="flex">
@@ -102,89 +104,121 @@ export default function MainLayout() {
                         <Separator className="mx-[4px] dark:bg-[#111111]" orientation="vertical" />*/}
                         <TooltipProvider>
                             <Tooltip>
-                                <TooltipTrigger className="h-8 w-8 bg-header-icon rounded-lg cursor-pointer my-4" onClick={changLanguage}>
+                                <TooltipTrigger className="h-8 w-8 bg-header-icon rounded-lg cursor-pointer my-4"
+                                                onClick={changLanguage}>
                                     <div className="">
                                         {language === 'en'
-                                            ? <EnIcon className="side-bar-button-size dark:text-slate-50 mx-auto w-[19px] h-[19px]" />
-                                            : <Globe className="side-bar-button-size dark:text-slate-50 mx-auto w-[17px] h-[17px]" />}
+                                            ? <EnIcon
+                                                className="side-bar-button-size dark:text-slate-50 mx-auto w-[19px] h-[19px]"/>
+                                            : <Globe
+                                                className="side-bar-button-size dark:text-slate-50 mx-auto w-[17px] h-[17px]"/>}
                                     </div>
                                 </TooltipTrigger>
                                 <TooltipContent><p>{options[language]}</p></TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
-                        <Separator className="mx-[23px] h-6 border-l my-5 border-[#dddddd]" orientation="vertical" />
+                        <Separator className="mx-[23px] h-6 border-l my-5 border-[#dddddd]" orientation="vertical"/>
                     </div>
                     <div className="flex items-center h-7 my-4">
                         {/* @ts-ignore */}
-                        <img className="h-7 w-7 rounded-2xl mr-4" src={__APP_ENV__.BASE_URL + '/user.png'} alt="" />
+                        <img className="h-7 w-7 rounded-2xl mr-4" src={__APP_ENV__.BASE_URL + '/user.png'} alt=""/>
                         <SelectHover
                             triagger={
-                                <span className="leading-8 text-[14px] mr-8 max-w-40 cursor-pointer text-ellipsis overflow-hidden whitespace-nowrap">
-                                    {user_name} <ChevronDown className="inline-block mt-[-2px]" />
+                                <span
+                                    className="leading-8 text-[14px] mr-8 max-w-40 cursor-pointer text-ellipsis overflow-hidden whitespace-nowrap">
+                                    {user_name} <ChevronDown className="inline-block mt-[-2px]"/>
                                 </span>
                             }>
-                            <SelectHoverItem onClick={JumpResetPage}><Lock className="w-4 h-4 mr-1" /><span>{t('menu.changePwd')}</span></SelectHoverItem>
-                            <SelectHoverItem onClick={handleLogout}><QuitIcon className="w-4 h-4 mr-1" /><span>{t('menu.logout')}</span></SelectHoverItem>
+                            <SelectHoverItem onClick={JumpResetPage}><Lock
+                                className="w-4 h-4 mr-1"/><span>{t('menu.changePwd')}</span></SelectHoverItem>
+                            <SelectHoverItem onClick={handleLogout}><QuitIcon
+                                className="w-4 h-4 mr-1"/><span>{t('menu.logout')}</span></SelectHoverItem>
                         </SelectHover>
                     </div>
                 </div>
             </div>
-            <div className="flex" style={{ height: "calc(100vh - 64px)" }}>
-                <div className="relative z-10 bg-background-main h-full w-[184px] min-w-[184px] px-3  shadow-x1 flex justify-between text-center ">
+            <div className="flex" style={{height: "calc(100vh - 64px)"}}>
+                <div
+                    className="relative z-10 bg-background-main h-full w-[184px] min-w-[184px] px-3  shadow-x1 flex justify-between text-center ">
                     <nav className="">
-                        {appConfig.benchMenu && <NavLink to='/workspace/' target="_blank" className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
-                            <ApplicationIcon className="h-6 w-6 my-[12px]" /><span className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">工作台</span>
+                        {/*<NavLink to='/dashboard'
+                                 className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
+                            <ApplicationIcon className="h-6 w-6 my-[12px]"/><span
+                            className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('首  页')}</span>
+                        </NavLink>*/}
+                        {appConfig.benchMenu && <NavLink to='/workspace/' target="_blank"
+                                                         className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
+                            <ApplicationIcon className="h-6 w-6 my-[12px]"/><span
+                            className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">首  页</span>
                         </NavLink>}
-                        <NavLink to='/' className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
-                            <ApplicationIcon className="h-6 w-6 my-[12px]" /><span className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.app')}</span>
+                        <NavLink to='/'
+                                 className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
+                            <ApplicationIcon className="h-6 w-6 my-[12px]"/><span
+                            className="mx-[14px] max-w-[58px] text-[14px] leading-[48px]">{t('menu.app')}</span>
                         </NavLink>
                         {
                             isMenu('build') &&
-                            <NavLink to='/build' className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`} >
-                                <TechnologyIcon className="h-6 w-6 my-[12px]" /><span className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.skills')}</span>
+                            <NavLink to='/build'
+                                     className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
+                                <TechnologyIcon className="h-6 w-6 my-[12px]"/><span
+                                className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.skills')}</span>
                             </NavLink>
                         }
                         {
                             isMenu('knowledge') &&
-                            <NavLink to='/filelib' className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
-                                <KnowledgeIcon className="h-6 w-6 my-[12px]" /><span className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.knowledge')}</span>
+                            <NavLink to='/filelib'
+                                     className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
+                                <KnowledgeIcon className="h-6 w-6 my-[12px]"/><span
+                                className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.knowledge')}</span>
                             </NavLink>
                         }
                         {
                             user.role === 'admin' && <>
-                                <NavLink to='/dataset' className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
-                                    <DatasetIcon className="h-6 w-6 my-[12px]" /><span className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.dataset')}</span>
+                                <NavLink to='/dataset'
+                                         className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
+                                    <DatasetIcon className="h-6 w-6 my-[12px]"/><span
+                                    className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.dataset')}</span>
                                 </NavLink>
                             </>
                         }
                         {
                             isMenu('model') &&
-                            <NavLink to='/model' className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
-                                <ModelIcon className="h-6 w-6 my-[12px]" /><span className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.models')}</span>
+                            <NavLink to='/model'
+                                     className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
+                                <ModelIcon className="h-6 w-6 my-[12px]"/><span
+                                className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.models')}</span>
                             </NavLink>
                         }
                         {
                             isMenu('evaluation') &&
-                            <NavLink to='/evaluation' className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
-                                <EvaluatingIcon className="h-6 w-6 my-[12px]" /><span className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.evaluation')}</span>
+                            <NavLink to='/evaluation'
+                                     className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
+                                <EvaluatingIcon className="h-6 w-6 my-[12px]"/><span
+                                className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.evaluation')}</span>
                             </NavLink>
                         }
                         {
-                            <NavLink to='/label' className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
-                                <LabelIcon className="h-6 w-6 my-[12px]" /><span className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.annotation')}</span>
+                            <NavLink to='/label'
+                                     className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
+                                <LabelIcon className="h-6 w-6 my-[12px]"/><span
+                                className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.annotation')}</span>
                             </NavLink>
                         }
                         {
                             isAdmin && <>
-                                <NavLink to='/log' className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
-                                    <LogIcon className="h-6 w-6 my-[12px]" /><span className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.log')}</span>
+                                <NavLink to='/log'
+                                         className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
+                                    <LogIcon className="h-6 w-6 my-[12px]"/><span
+                                    className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.log')}</span>
                                 </NavLink>
                             </>
                         }
                         {
                             isAdmin && <>
-                                <NavLink to='/sys' className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
-                                    <SystemIcon className="h-6 w-6 my-[12px]" /><span className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.system')}</span>
+                                <NavLink to='/sys'
+                                         className={`navlink inline-flex rounded-lg w-full px-6 hover:bg-nav-hover h-12 mb-[3.5px]`}>
+                                    <SystemIcon className="h-6 w-6 my-[12px]"/><span
+                                    className="mx-[14px] max-w-[48px] text-[14px] leading-[48px]">{t('menu.system')}</span>
                                 </NavLink>
                             </>
                         }
@@ -193,22 +227,28 @@ export default function MainLayout() {
                         <div className="help flex items-between my-3">
                             <TooltipProvider>
                                 <Tooltip>
-                                    <TooltipTrigger className="h-[72px] w-[78px] cursor-pointer bg-background-tip rounded-lg hover:bg-[#1b1f23] hover:text-[white] transition-all dark:hover:bg-background-tip-darkhover">
+                                    <TooltipTrigger
+                                        className="h-[72px] w-[78px] cursor-pointer bg-background-tip rounded-lg hover:bg-[#1b1f23] hover:text-[white] transition-all dark:hover:bg-background-tip-darkhover">
                                         <Link to={"https://github.com/dataelement/bisheng"} target="_blank">
-                                            <GithubIcon className="side-bar-button-size mx-auto w-5 h-5 " />
-                                            <span className="block text-[12px] mt-[8px] font-bold">{t("menu.github")}</span>
+                                            <GithubIcon className="side-bar-button-size mx-auto w-5 h-5 "/>
+                                            <span
+                                                className="block text-[12px] mt-[8px] font-bold">{t("menu.github")}</span>
                                         </Link>
                                     </TooltipTrigger>
                                     <TooltipContent><p>{t("menu.github")}</p></TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
-                            <Separator className="mx-1" orientation="vertical" />
+                            <Separator className="mx-1" orientation="vertical"/>
                             <TooltipProvider>
                                 <Tooltip>
-                                    <TooltipTrigger className="h-[72px] w-[78px] cursor-pointer bg-background-tip rounded-lg p-0 align-top hover:bg-[#0055e3] hover:text-[white]  transition-all">
-                                        <Link className="m-0 p-0" to={"https://m7a7tqsztt.feishu.cn/wiki/ZxW6wZyAJicX4WkG0NqcWsbynde"} target="_blank">
-                                            <BookOpenIcon className=" mx-auto w-5 h-5" />
-                                            <span className="block text-[12px] mt-[8px] font-bold">{t("menu.bookopen")}</span>
+                                    <TooltipTrigger
+                                        className="h-[72px] w-[78px] cursor-pointer bg-background-tip rounded-lg p-0 align-top hover:bg-[#0055e3] hover:text-[white]  transition-all">
+                                        <Link className="m-0 p-0"
+                                              to={"https://m7a7tqsztt.feishu.cn/wiki/ZxW6wZyAJicX4WkG0NqcWsbynde"}
+                                              target="_blank">
+                                            <BookOpenIcon className=" mx-auto w-5 h-5"/>
+                                            <span
+                                                className="block text-[12px] mt-[8px] font-bold">{t("menu.bookopen")}</span>
                                         </Link>
                                     </TooltipTrigger>
                                     <TooltipContent><p>{t('menu.document')}</p></TooltipContent>
@@ -216,13 +256,16 @@ export default function MainLayout() {
                             </TooltipProvider>
                         </div>
                     </div>}
+                    <span className="absolute bottom-2 left-0 w-full text-center text-base text-gray-400">
+                        版本v{json.version}
+                    </span>
                 </div>
                 <div className="flex-1 bg-background-main-content rounded-lg w-[calc(100vw-184px)]">
                     <ErrorBoundary
                         onReset={() => window.location.href = window.location.href}
                         FallbackComponent={CrashErrorComponent}
                     >
-                        <Outlet />
+                        <Outlet/>
                     </ErrorBoundary>
                 </div>
             </div>

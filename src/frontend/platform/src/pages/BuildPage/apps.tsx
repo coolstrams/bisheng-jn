@@ -14,7 +14,7 @@ import { useToast } from "@/components/bs-ui/toast/use-toast";
 import { userContext } from "@/contexts/userContext";
 import { readTempsDatabase } from "@/controllers/API";
 import { changeAssistantStatusApi, deleteAssistantApi } from "@/controllers/API/assistant";
-import { deleteFlowFromDatabase, getAppsApi, saveFlowToDatabase, updataOnlineState } from "@/controllers/API/flow";
+import { deleteFlowFromDatabase, getAppsApi, saveFlowToDatabase, updataOnlineState, getSelfAppsApi } from "@/controllers/API/flow";
 import { onlineWorkflow } from "@/controllers/API/workflow";
 import { captureAndAlertRequestErrorHoc } from "@/controllers/request";
 import { AppNumType, AppType } from "@/types/app";
@@ -28,6 +28,8 @@ import { useQueryLabels } from "./assistant";
 import CreateApp from "./CreateApp";
 import CardSelectVersion from "./skills/CardSelectVersion";
 import CreateTemp from "./skills/CreateTemp";
+import {Checkbox} from "@/components/bs-ui/checkBox";
+import {Label} from "@/components/bs-ui/label";
 
 export const SelectType = ({ all = false, defaultValue = 'all', onChange }) => {
     const [value, setValue] = useState<string>(defaultValue)
@@ -72,8 +74,10 @@ export default function apps() {
     const { message } = useToast()
     const navigate = useNavigate()
 
+    const [isCreatedByMe, setIsCreatedByMe] = useState(false)
+
     const { page, pageSize, data: dataSource, total, loading, setPage, search, reload, refreshData, filterData } = useTable<FlowType>({ pageSize: 14 }, (param) =>
-        getAppsApi(param)
+        isCreatedByMe? getSelfAppsApi(param): getAppsApi(param)
     )
 
     const { open: tempOpen, tempType, flowRef, toggleTempModal } = useCreateTemp()
@@ -130,7 +134,7 @@ export default function apps() {
     const { toast } = useToast()
     const handleSetting = (data) => {
         if (!data.write) {
-            return toast({ variant: 'warning', description: '无编辑权限' })
+            return toast({ variant: 'warning', description: '无编辑权限，请联系创建人' })
         }
         if (data.flow_type === 5) {
             // 上线状态下，助手不能进入编辑
@@ -169,15 +173,34 @@ export default function apps() {
         filterData({ tag_id: id })
     }
 
+    const handleCheckboxChange = (checked: boolean) => {
+        setIsCreatedByMe(checked)
+        reload()
+    };
+
     const tempTypeRef = useRef(null)
     return <div className="h-full relative">
         <div className="px-10 py-10 h-full overflow-y-scroll scrollbar-hide relative bg-background-main border-t">
             <div className="flex gap-4">
-                <SearchInput className="w-64" placeholder={t('build.searchApp')} onChange={(e) => search(e.target.value)}></SearchInput>
+                <div className="flex items-center space-x-1 ml-2 mr-2">
+                    <Checkbox
+                        id="isCreatedByMe"
+                        className="h-6 w-6 rounded-md border-2"
+                        checked={isCreatedByMe}
+                        onCheckedChange={handleCheckboxChange}
+                        value={isCreatedByMe}
+                    />
+                    <Label
+                        htmlFor="isCreatedByMe"
+                        className={"text-base text-black dark:text-white cursor-pointer"}
+                    >我创建的</Label>
+                </div>
+                <SearchInput className="w-64" placeholder={t('build.searchApp')}
+                             onChange={(e) => search(e.target.value)}></SearchInput>
                 <SelectType all onChange={(v) => {
                     tempTypeRef.current = v
-                    filterData({ type: v })
-                }} />
+                    filterData({type: v})
+                }}/>
                 <SelectSearch
                     value={!selectLabel.value ? '' : selectLabel.value}
                     options={allOptions}
@@ -192,13 +215,14 @@ export default function apps() {
                     variant="ghost"
                     className="hover:bg-gray-50 flex gap-2 dark:hover:bg-[#34353A] ml-auto"
                     onClick={() => navigate(`/build/temps/${tempTypeRef.current && tempTypeRef.current !== AppType.ALL ? tempTypeRef.current : AppType.FLOW}`)}
-                ><MoveOneIcon className="dark:text-slate-50" />{t('build.manageAppTemplates')}</Button>}
+                ><MoveOneIcon className="dark:text-slate-50"/>{t('build.manageAppTemplates')}</Button>}
             </div>
             {/* list */}
             {
                 loading
-                    ? <div className="absolute w-full h-full top-0 left-0 flex justify-center items-center z-10 bg-[rgba(255,255,255,0.6)] dark:bg-blur-shared">
-                        <LoadingIcon />
+                    ? <div
+                        className="absolute w-full h-full top-0 left-0 flex justify-center items-center z-10 bg-[rgba(255,255,255,0.6)] dark:bg-blur-shared">
+                        <LoadingIcon/>
                     </div>
                     : <div className="mt-6 flex gap-2 flex-wrap pb-20 min-w-[980px]">
                         <AppTempSheet onSelect={handleCreateApp} onCustomCreate={handleCreateApp}>

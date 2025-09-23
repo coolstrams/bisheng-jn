@@ -407,6 +407,8 @@ class AssistantService(BaseService, AssistantUtils):
 
         for one in res:
             one['write'] = one['id'] not in tool_type_ids_extra or one['user_id'] == user.user_id
+            user_info = UserDao.get_user(one['user_id'])
+            one['user_name'] = user_info.user_name if user_info else ''
             if not user.is_admin():
                 one['extra'] = ''
             one["children"] = tool_type_children.get(one["id"], [])

@@ -37,6 +37,7 @@ import Report from "./pages/Report";
 import SystemPage from "./pages/SystemPage";
 import ResoucePage from "./pages/resoucePage";
 import { AppNumType } from "./types/app";
+import Dashboard from "./pages/Dashboard";
 
 // react 与 react router dom版本不匹配
 // const FileLibPage = lazy(() => import(/* webpackChunkName: "FileLibPage" */ "./pages/FileLibPage"));
@@ -75,6 +76,7 @@ const privateRouter = [
       // { path: "build/assist", element: <SkillAssisPage />, permission: 'build', },
       // { path: "build/skills", element: <SkillsPage />, permission: 'build', },
       // @ts-ignore
+      { path: "dashboard", element: <Dashboard />, },
       { path: "build/tools", element: <SkillToolsPage />, permission: 'build', },
       { path: "build/client", element: <WorkBenchPage />, permission: 'build' },
       { path: "build", element: <Navigate to="apps" replace /> },

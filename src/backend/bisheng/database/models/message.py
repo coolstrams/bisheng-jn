@@ -7,7 +7,7 @@ from bisheng.database.models.base import SQLModelSerializable
 from loguru import logger
 from pydantic import BaseModel
 from sqlmodel import (JSON, Column, DateTime, Field, String, Text, case, delete, func, not_, or_,
-                      select, text, update)
+                      select, text, update, SQLModel)
 
 
 class LikedType(Enum):
@@ -63,6 +63,12 @@ class ChatMessageQuery(BaseModel):
 
 class ChatMessageCreate(MessageBase):
     pass
+
+
+# 定义结果模型（不会建表，只用于返回）
+class MessageCount(SQLModel):
+    flow_id: str
+    count: int
 
 
 class MessageDao(MessageBase):
@@ -212,6 +218,17 @@ class ChatMessageDao(MessageBase):
             st = select(ChatMessage.chat_id).where(ChatMessage.flow_id.in_(flow_id)).group_by(
                 ChatMessage.chat_id)
             return session.exec(st).all()
+
+    @classmethod
+    def get_msg_count_by_flow_ids(cls, flow_id: List[str]) -> List[MessageCount] | None:
+        # 获取技能的会话数量
+        with session_getter() as session:
+            st = select(ChatMessage.flow_id, func.count().label('count')) \
+                .where(ChatMessage.flow_id.in_(flow_id), ChatMessage.category == 'question').group_by(ChatMessage.flow_id).order_by(
+                    ChatMessage.flow_id.desc())
+            result = session.exec(st).all()
+            logger.info('result', result)
+            return [MessageCount(flow_id=row[0], count=row[1]) for row in result] if result is not None else None
 
     @classmethod
     def delete_by_user_chat_id(cls, user_id: int, chat_id: str):

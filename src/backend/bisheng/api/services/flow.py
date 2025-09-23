@@ -22,6 +22,7 @@ from bisheng.database.models.flow_version import FlowVersionDao, FlowVersionRead
 from bisheng.database.models.group_resource import GroupResourceDao, ResourceTypeEnum, GroupResource
 from bisheng.database.models.role_access import RoleAccessDao, AccessType
 from bisheng.database.models.tag import TagDao
+from bisheng.database.models.upvote import UpvoteDao
 from bisheng.database.models.user import UserDao
 from bisheng.database.models.user_group import UserGroupDao
 from bisheng.database.models.user_role import UserRoleDao

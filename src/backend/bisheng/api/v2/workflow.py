@@ -31,7 +31,8 @@ async def invoke_workflow(request: Request,
                           message_id: Optional[int] = Body(default=None, description='消息ID'),
                           session_id: Optional[str] = Body(default=None,
                                                            description='会话ID,一次workflow调用的唯一标识')):
-    login_user = get_default_operator()
+    login_user = (
+        ())
     workflow_id = workflow_id.hex
 
     # 解析出chat_id和unique_id

@@ -1,4 +1,4 @@
-import { TitleLogo } from "@/components/bs-comp/cardComponent";
+import { TitleLogoSide } from "@/components/bs-comp/cardComponent";
 import { useMessageStore } from "@/components/bs-comp/chatComponent/messageStore";
 import LoadMore from "@/components/bs-comp/loadMore";
 import { AssistantIcon, SkillIcon } from "@/components/bs-icons";
@@ -30,13 +30,13 @@ const ChatItem = ({ chat, chatId, location, handleSelectChat, handleDeleteChat }
             onClick={() => handleSelectChat(chat)}
         >
             <div className="flex place-items-center space-x-3">
-                <div className="inline-block bg-purple-500 rounded-md">
-                    <TitleLogo
+                <div className="inline-block rounded-md">
+                    <TitleLogoSide
                         url={chat.logo}
                         id={chat.flow_id}
                     >
                         {chat.flow_type === 'assistant' ? <AssistantIcon /> : <SkillIcon />}
-                    </TitleLogo>
+                    </TitleLogoSide>
                 </div>
                 <p className="truncate text-sm font-bold leading-6">{chat.flow_name}</p>
             </div>
@@ -118,37 +118,39 @@ export default function SkillChatPage() {
     }
 
     return <div className="flex h-full">
-        <div className="h-full w-[220px] relative border-r">
-            <div className="absolute flex top-0 w-full bs-chat-bg bg-background-main-content z-10 p-2">
-                {/* <SkillChatSheet onSelect={handlerSelectFlow}>
-                    <div id="newchat" className="flex justify-around items-center w-[200px] h-[48px] rounded-lg px-10 py-2 mx-auto text-center text-sm cursor-pointer bg-background-main-content hover:bg-gray-100 dark:hover:bg-gray-800 relative z-10">
+        { !location && (
+            <div className="h-full w-[220px] relative border-r">
+                <div className="absolute flex top-0 w-full bs-chat-bg bg-background-main-content z-10 p-2">
+                    {/* <SkillChatSheet onSelect={handlerSelectFlow}>
+                        <div id="newchat" className="flex justify-around items-center w-[200px] h-[48px] rounded-lg px-10 py-2 mx-auto text-center text-sm cursor-pointer bg-background-main-content hover:bg-gray-100 dark:hover:bg-gray-800 relative z-10">
+                            <PlusBoxIcon className="dark:hidden"></PlusBoxIcon>
+                            <PlusBoxIconDark className="hidden dark:block"></PlusBoxIconDark>
+                            {t('chat.newChat')}
+                        </div>
+                    </SkillChatSheet> */}
+                    <div onClick={() => handlerSelectFlow(null)} id="newchat" className="flex justify-around items-center w-[200px] h-[48px] rounded-lg px-10 py-2 mx-auto text-center text-sm cursor-pointer bg-background-main-content hover:bg-gray-100 dark:hover:bg-gray-800 relative z-10">
                         <PlusBoxIcon className="dark:hidden"></PlusBoxIcon>
                         <PlusBoxIconDark className="hidden dark:block"></PlusBoxIconDark>
                         {t('chat.newChat')}
                     </div>
-                </SkillChatSheet> */}
-                <div onClick={() => handlerSelectFlow(null)} id="newchat" className="flex justify-around items-center w-[200px] h-[48px] rounded-lg px-10 py-2 mx-auto text-center text-sm cursor-pointer bg-background-main-content hover:bg-gray-100 dark:hover:bg-gray-800 relative z-10">
-                    <PlusBoxIcon className="dark:hidden"></PlusBoxIcon>
-                    <PlusBoxIconDark className="hidden dark:block"></PlusBoxIconDark>
-                    {t('chat.newChat')}
                 </div>
-            </div>
-            <div ref={chatsRef} className="scroll h-full overflow-y-scroll no-scrollbar p-2 pt-14">
-                {
-                    chatList.map((chat, i) => (
-                        <ChatItem
-                            key={chat.chat_id}
-                            chat={chat}
-                            chatId={chatId}
-                            location={location}
-                            handleSelectChat={handleSelectChat}
-                            handleDeleteChat={handleDeleteChat}
-                        />
-                    ))
-                }
-                <LoadMore onScrollLoad={onScrollLoad} />
-            </div>
-        </div>
+                <div ref={chatsRef} className="scroll h-full overflow-y-scroll no-scrollbar p-2 pt-14">
+                    {
+                        chatList.map((chat, i) => (
+                            <ChatItem
+                                key={chat.chat_id}
+                                chat={chat}
+                                chatId={chatId}
+                                location={location}
+                                handleSelectChat={handleSelectChat}
+                                handleDeleteChat={handleDeleteChat}
+                            />
+                        ))
+                    }
+                    <LoadMore onScrollLoad={onScrollLoad} />
+                </div>
+            </div> )
+        }
         {/* chat */}
         {
             location

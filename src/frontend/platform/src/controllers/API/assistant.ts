@@ -78,6 +78,27 @@ export const getChatOnlineApi = async (page, keyword, tag_id) => {
 //     return await axios.get(`/api/v1/chat/online?${tagStr}`)
 // };
 
+// 获取使用次数靠前的技能
+export const getHotChatOnlineApi = async (page=1, keyword, tag_id=-1) => {
+    return await axios.get(`/api/v1/chat/online/hot`, {
+        params: {
+            page, keyword,
+            limit: 40,
+            tag_id: tag_id === -1 ? null : tag_id
+        }
+    })
+}
+
+// 获取自己创建的技能
+export const getSelfChatOnlineApi = async (page=1, keyword, tag_id=-1) => {
+    return await axios.get(`/api/v1/chat/online/createdBySelf`, {
+        params: {
+            page, keyword,
+            limit: 40,
+            tag_id: tag_id === -1 ? null : tag_id
+        }
+    })
+}
 
 // 获取工具集合
 // 之前的is_preset字段改为了枚举

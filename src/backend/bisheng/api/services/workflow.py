@@ -1,5 +1,6 @@
+import logging
 from typing import Dict, Optional
-
+from loguru import logger
 from bisheng.utils import generate_uuid
 from fastapi.encoders import jsonable_encoder
 from langchain.memory import ConversationBufferWindowMemory
@@ -17,6 +18,8 @@ from bisheng.database.models.flow_version import FlowVersionDao
 from bisheng.database.models.group_resource import GroupResourceDao, ResourceTypeEnum
 from bisheng.database.models.role_access import AccessType, RoleAccessDao
 from bisheng.database.models.tag import TagDao
+from bisheng.database.models.upvote import UpvoteDao
+from bisheng.database.models.message import ChatMessageDao
 from bisheng.database.models.user import UserDao
 from bisheng.database.models.user_role import UserRoleDao
 from bisheng.workflow.callback.base_callback import BaseCallback
@@ -30,6 +33,7 @@ class WorkFlowService(BaseService):
 
     @classmethod
     def get_all_flows(cls, user: UserPayload, name: str, status: int, tag_id: Optional[int], flow_type: Optional[int],
+                      query_type: Optional[str],
                       page: int = 1,
                       page_size: int = 10) -> (list[dict], int):
         """
@@ -44,8 +48,16 @@ class WorkFlowService(BaseService):
                 return [], 0
             flow_ids = [one.resource_id for one in ret]
 
+        if query_type == 'BySelf':
+            ret_flow = FlowDao.get_flow_by_user(user.user_id)
+            if not ret_flow:
+                return [], 0
+            flow_by_self_ids = [one.id for one in ret_flow]
+            intersect_ids = list(set(flow_ids) & set(flow_by_self_ids))
+            data, total = FlowDao.get_all_apps(name, status, intersect_ids, flow_type, user.user_id, None, page, page_size)
+
         # 获取用户可见的技能列表
-        if user.is_admin():
+        elif user.is_admin():
             data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, None, page, page_size)
         else:
             user_role = UserRoleDao.get_user_roles(user.user_id)
@@ -87,6 +99,15 @@ class WorkFlowService(BaseService):
 
         resource_tag_dict = TagDao.get_tags_by_resource(None, resource_ids)
 
+        logger.info("resource_ids:", resource_ids)
+        flow_upvotes = UpvoteDao.get_count_by_ids(resource_ids)
+        logger.info("flow_upvotes:", flow_upvotes)
+
+        user_flow_upvotes = UpvoteDao.get_upvote_by_user_id(user.user_id)
+        logger.info("user_flow_upvotes:", user_flow_upvotes)
+
+        message_counts = ChatMessageDao.get_msg_count_by_flow_ids(resource_ids)
+
         # 增加额外的信息
         for one in data:
             one['user_name'] = user_dict.get(one['user_id'], one['user_id'])
@@ -94,8 +115,18 @@ class WorkFlowService(BaseService):
             one['version_list'] = flow_versions.get(one['id'], [])
             one['group_ids'] = resource_group_dict.get(one['id'], [])
             one['tags'] = resource_tag_dict.get(one['id'], [])
+            one['upvote_count'] = next((item.count for item in flow_upvotes if item.flow_id == one['id']), 0)
+            one['is_upvote'] = next((True for item in user_flow_upvotes if item.flow_id == one['id'] and item.status == 1), False)
+            one['ms_count'] = next((item.count for item in message_counts if item.flow_id == one['id']), 0)
             one['logo'] = cls.get_logo_share_link(one['logo'])
             one['id'] = one['id']
+
+        if query_type == 'COUNT':
+            # 根据ms_count倒序排序并取前10条
+            data.sort(key=lambda x: x['ms_count'], reverse=True)
+            data = data[:10]
+            # 更新total为实际返回的记录数
+            total = len(data)
 
         return data, total
 

@@ -88,8 +88,8 @@ export const LoginPage = () => {
             ).then((res: any) => {
                 window.self === window.top ? localStorage.removeItem('ws_token') : localStorage.setItem('ws_token', res.access_token)
                 localStorage.setItem('user_name', res.user_name)
+                localStorage.setItem('user_id', res.user_id)
                 localStorage.setItem('isLogin', '1')
-                localStorage.setItem('userName', res.user_name)
                 location.href = location.href
                 const path = location.href.indexOf('from=workspace') === -1 ? '' : '/workspace/'
                 location.href = path ? location.origin + path : location.href

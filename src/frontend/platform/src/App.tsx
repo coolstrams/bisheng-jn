@@ -31,13 +31,15 @@ export default function App() {
     if (ticket) {
       // 发送GET请求以获取userId
       captureAndAlertRequestErrorHoc(ssocLoginApi(ticket, serverip, urlport, socketport, urlpath, appid).then((res: any) => {
-        // setUser(res.data)
         localStorage.setItem('user_name', res.user_name)
         localStorage.setItem('ws_token', res.access_token)
-        localStorage.setItem('userName', res.user_name)
+        // localStorage.setItem('userName', res.user_name)
         localStorage.setItem('isLogin', '1')
         location.href = '/'
-        }))
+        }).catch((error: any) => {
+          console.log('Login error: ', error)
+          setErrorData(error)
+      }))
     }
   }, []);
 

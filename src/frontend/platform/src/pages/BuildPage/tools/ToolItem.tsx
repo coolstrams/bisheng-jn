@@ -35,18 +35,22 @@ export default function ToolItem({
             <div className="group w-full flex gap-2 text-start relative pr-4">
                 <TitleIconBg className="w-8 h-8 min-w-8" id={data.id} ><ToolIcon /></TitleIconBg>
                 <div className="flex-1 min-w-0">
-                    <div className="w-full text-sm font-medium leading-none flex items-center gap-2">{data.name}
+                    <div className="w-full text-sm font-medium leading-none flex items-center gap-2">
+                        <div className="flex flex-col">
+                            <span>{data.name}</span>
+                            {data.user_name && <span>{t('skills.createdBy')}:  {data.user_name}</span>}
+                        </div>
                         {
                             ['edit', 'mcp'].includes(type) && data.write && <div
                                 className="group-hover:opacity-100 opacity-0 hover:bg-[#EAEDF3] rounded cursor-pointer"
                                 onClick={(e) => onEdit(data.id)}
-                            ><SettingIcon /></div>
+                            ><SettingIcon/></div>
                         }
                         {
                             onSetClick && <div
                                 className="group-hover:opacity-100 opacity-0 hover:bg-[#EAEDF3] rounded cursor-pointer"
                                 onClick={onSetClick}
-                            ><SettingIcon /></div>
+                            ><SettingIcon/></div>
                         }
                     </div>
                     <p className="text-sm text-muted-foreground mt-2">{data.description}</p>

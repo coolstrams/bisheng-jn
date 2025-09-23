@@ -51,7 +51,10 @@ export const saveWorkflow = async (versionId: number, data: WorkFlow): Promise<a
 */
 export const onlineWorkflow = async (flow, status = ''): Promise<any> => {
     const { name, description, logo } = flow
-    const data = { name, description, logo: logo && logo.match(/(icon.*)\?/)?.[1] }
+    console.log('logo :>> ', logo)
+    // const data = { name, description, logo: logo && logo.match(/(icon.*)\?/)?.[1] }
+    const data = { name, description, logo: logo && logo.match(/(\/icon\/[^?]+)/)?.[1] }
+    console.log('data :>> ', data)
     if (status) {
         data['status'] = status
     }

@@ -20,7 +20,7 @@ export default defineConfig({
       //   changeOrigin: true,
       // },
       '/workspace/bisheng': {
-        target: "http://192.168.106.116:9000",
+        target: "http://10.3.96.19:9100",
         changeOrigin: true,
         secure: false,
         rewrite: (path) => {
@@ -28,7 +28,7 @@ export default defineConfig({
         },
       },
       '/workspace/api': {
-        target: 'http://192.168.106.120:3002',
+        target: 'http://10.3.32.18:7860',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => {
@@ -41,7 +41,7 @@ export default defineConfig({
         }
       },
       '/workspace/tmp-dir': {
-        target: 'http://192.168.106.116:9000',
+        target: 'http://10.3.96.19:9100',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => {

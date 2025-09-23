@@ -97,7 +97,8 @@ export default function MarkLabel({ open, home, onClose }) {
                     <div className='w-full relative top-[50%] transform -translate-y-[50%]'>
                         {
                             labels.map(l =>
-                                <Button onClick={() => handleSelect(l.value)}
+                                <Button key={l.value}
+                                    onClick={() => handleSelect(l.value)}
                                     size='sm'
                                     className={`ml-4 mt-4 p-1 ${!l.selected && 'bg-blue-300 hover:bg-blue-300'} w-[120px]`}>
                                     <span className='truncate'>{l.label}</span>

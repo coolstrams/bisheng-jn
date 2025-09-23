@@ -239,6 +239,7 @@ async def update_flow(*,
     flow_data = flow.model_dump(exclude_unset=True)
 
     # TODO:  验证工作流是否可以使用
+    logger.info(f'flow_data: {flow_data}')
 
     if db_flow.status == FlowStatus.ONLINE.value and (
             'status' not in flow_data or flow_data['status'] != FlowStatus.OFFLINE.value):
@@ -272,7 +273,24 @@ def read_flows(*,
                page_num: int = Query(default=1, description='页数'),
                status: int = None):
     """Read all flows."""
-    data, total = WorkFlowService.get_all_flows(login_user, name, status, tag_id, flow_type, page_num, page_size)
+    data, total = WorkFlowService.get_all_flows(login_user, name, status, tag_id, flow_type, None, page_num, page_size)
+    return resp_200(data={
+        'data': data,
+        'total': total
+    })
+
+
+@router.get('/list/createdBySelf', status_code=200)
+def read_flows(*,
+               login_user: UserPayload = Depends(get_login_user),
+               name: str = Query(default=None, description='根据name查找数据库，包含描述的模糊搜索'),
+               tag_id: int = Query(default=None, description='标签ID'),
+               flow_type: int = Query(default=None, description='类型 1 flow 5 assitant 10 workflow '),
+               page_size: int = Query(default=10, description='每页数量'),
+               page_num: int = Query(default=1, description='页数'),
+               status: int = None):
+    """Read all flows."""
+    data, total = WorkFlowService.get_all_flows(login_user, name, status, tag_id, flow_type, 'BySelf', page_num, page_size)
     return resp_200(data={
         'data': data,
         'total': total

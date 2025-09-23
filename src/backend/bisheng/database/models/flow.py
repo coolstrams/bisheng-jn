@@ -19,7 +19,6 @@ from bisheng.utils import generate_uuid
 # if TYPE_CHECKING:
 
 
-
 class FlowStatus(Enum):
     OFFLINE = 1
     ONLINE = 2

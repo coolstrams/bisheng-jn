@@ -14,6 +14,7 @@ from bisheng.api.v1.report import router as report_router
 from bisheng.api.v1.server import router as server_router
 from bisheng.api.v1.skillcenter import router as skillcenter_router
 from bisheng.api.v1.tag import router as tag_router
+from bisheng.api.v1.upvote import router as upvote_router
 from bisheng.api.v1.user import router as user_router
 from bisheng.api.v1.usergroup import router as group_router
 from bisheng.api.v1.validate import router as validate_router
@@ -40,6 +41,7 @@ __all__ = [
     'group_router',
     'audit_router',
     'tag_router',
+    'upvote_router',
     'llm_router',
     'workflow_router',
     'mark_router',

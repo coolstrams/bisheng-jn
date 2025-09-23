@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
@@ -209,13 +210,15 @@ class GptsToolsDao(GptsToolsBase):
                 GptsToolsType.id.in_(extra_tool_type_ids),
                 GptsToolsType.user_id == user_id
             ))
-        else:
+        elif user_id != 1:
             filters.append(GptsToolsType.user_id == user_id)
+
         if include_preset:
             filters.append(GptsToolsType.is_preset == ToolPresetType.PRESET.value)
         if is_preset is not None:
             statement = statement.where(GptsToolsType.is_preset == is_preset.value)
-        statement = statement.where(or_(*filters))
+        if filters:
+            statement = statement.where(or_(*filters))
         statement = statement.order_by(func.field(GptsToolsType.is_preset,
                                                   ToolPresetType.PRESET.value).desc(), GptsToolsType.update_time.desc())
         with session_getter() as session:
