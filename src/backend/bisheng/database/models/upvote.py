@@ -77,7 +77,6 @@ class UpvoteDao(Upvote):
                 .where(and_(Upvote.flow_id.in_(flow_ids), Upvote.status == 1)) \
                 .group_by(Upvote.flow_id).order_by(desc(func.count()))
             result = session.exec(statement).all()
-            logger.info("get_count_by_ids: ", result)
             return [UpvoteCount(flow_id=row[0], count=row[1]) for row in result] if result is not None else None
 
     @classmethod

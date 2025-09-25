@@ -60,13 +60,15 @@ export default function HomePage({ onSelect }) {
     ];
 
     const [index, setIndex] = useState(0);
+    const [isCreatedByMe, setIsCreatedByMe] = useState(false)
 
     // Data fetching functions
     const fetchChatData = async (categoryId, loadMore = false) => {
         const response = await getChatOnlineApi(
             currentPageRef.current,
             searchQueryRef.current,
-            categoryId
+            categoryId,
+            isCreatedByMe ? 'BySelf' : ''
         )
         setSelectedCategoryId(categoryId)
         setHasMoreData(true)
@@ -115,7 +117,13 @@ export default function HomePage({ onSelect }) {
     const handleSearch = (e) => {
         currentPageRef.current = 1
         searchQueryRef.current = e.target.value
-        debounceFetchChatData(selectedCategoryId)
+        if (!isCreatedByMe) {
+            console.log('isCreateByMe:', isCreatedByMe)
+            debounceFetchChatData(selectedCategoryId)
+        }
+        else {
+            fetchSelfChatData(true)
+        }
     }
 
     const handleCloseLabelModal = async (shouldClose) => {
@@ -132,6 +140,14 @@ export default function HomePage({ onSelect }) {
         setHasMoreData(false)
         currentPageRef.current = 1
         fetchChatData(categoryId)
+        /*if (!isCreatedByMe) {
+            console.log('handleCategory isCreateByMe false')
+            fetchChatData(categoryId)
+        }
+        else {
+            console.log('handleCategory isCreateByMe true')
+            fetchSelfChatData(true)
+        }*/
     }
 
     const handleLoadMore = async () => {
@@ -139,11 +155,10 @@ export default function HomePage({ onSelect }) {
         await debounceFetchChatData(selectedCategoryId, true)
     }
 
-    const [isCreatedByMe, setIsCreatedByMe] = useState(false)
-
     const fetchSelfChatData = async (checked = false, loadMore = false) => {
         let response = {}
         setIsCreatedByMe(checked)
+        console.log('checked:', checked)
         if (checked) {
             response = await getSelfChatOnlineApi(
                 currentPageRef.current,

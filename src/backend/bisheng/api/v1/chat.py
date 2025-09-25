@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import List, Optional
 from uuid import UUID, uuid4
 
@@ -477,10 +478,11 @@ def get_session_list(*,
 def get_online_chat(*,
                     keyword: Optional[str] = None,
                     tag_id: Optional[int] = None,
+                    query_type: Optional[str] = None,
                     page: Optional[int] = 1,
                     limit: Optional[int] = 10,
                     user: UserPayload = Depends(get_login_user)):
-    data, _ = WorkFlowService.get_all_flows(user, keyword, FlowStatus.ONLINE.value, tag_id, None, None, page, limit)
+    data, _ = WorkFlowService.get_all_flows(user, keyword, FlowStatus.ONLINE.value, tag_id, None, query_type, page, limit)
     return resp_200(data=data)
 
 
@@ -502,7 +504,7 @@ def get_online_chat_hot(*,
                     page: Optional[int] = 1,
                     limit: Optional[int] = 10,
                     user: UserPayload = Depends(get_login_user)):
-    data, _ = WorkFlowService.get_all_flows(user, None, FlowStatus.ONLINE.value, tag_id, None, 'BySelf', page=1)
+    data, _ = WorkFlowService.get_all_flows(user, keyword, FlowStatus.ONLINE.value, tag_id, None, 'BySelf', page=1)
     return resp_200(data=data)
 
 

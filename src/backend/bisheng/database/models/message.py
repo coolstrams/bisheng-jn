@@ -227,7 +227,6 @@ class ChatMessageDao(MessageBase):
                 .where(ChatMessage.flow_id.in_(flow_id), ChatMessage.category == 'question').group_by(ChatMessage.flow_id).order_by(
                     ChatMessage.flow_id.desc())
             result = session.exec(st).all()
-            logger.info('result', result)
             return [MessageCount(flow_id=row[0], count=row[1]) for row in result] if result is not None else None
 
     @classmethod

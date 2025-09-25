@@ -48,17 +48,28 @@ class WorkFlowService(BaseService):
                 return [], 0
             flow_ids = [one.resource_id for one in ret]
 
-        if query_type == 'BySelf':
+        # 获取用户可见的技能列表
+        if user.is_admin():
+            if query_type != 'BySelf':
+                data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, None, page, page_size)
+            else:
+                data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, user.user_id, None, page, page_size)
+        elif query_type == 'BySelf':
             ret_flow = FlowDao.get_flow_by_user(user.user_id)
             if not ret_flow:
                 return [], 0
             flow_by_self_ids = [one.id for one in ret_flow]
-            intersect_ids = list(set(flow_ids) & set(flow_by_self_ids))
+            logger.info(f"flow_by_self_ids:{flow_by_self_ids}")
+            logger.info(f"flow_ids:{flow_ids}")
+            if tag_id and flow_ids:
+                intersect_ids = list(set(flow_ids) & set(flow_by_self_ids))
+                logger.info(f"intersect_ids2:{intersect_ids}")
+            else:
+                intersect_ids = flow_by_self_ids
+            logger.info(f"intersect_ids:{intersect_ids}")
+            if not intersect_ids:
+                return [], 0
             data, total = FlowDao.get_all_apps(name, status, intersect_ids, flow_type, user.user_id, None, page, page_size)
-
-        # 获取用户可见的技能列表
-        elif user.is_admin():
-            data, total = FlowDao.get_all_apps(name, status, flow_ids, flow_type, None, None, page, page_size)
         else:
             user_role = UserRoleDao.get_user_roles(user.user_id)
             role_ids = [role.role_id for role in user_role]
@@ -99,12 +110,9 @@ class WorkFlowService(BaseService):
 
         resource_tag_dict = TagDao.get_tags_by_resource(None, resource_ids)
 
-        logger.info("resource_ids:", resource_ids)
         flow_upvotes = UpvoteDao.get_count_by_ids(resource_ids)
-        logger.info("flow_upvotes:", flow_upvotes)
 
         user_flow_upvotes = UpvoteDao.get_upvote_by_user_id(user.user_id)
-        logger.info("user_flow_upvotes:", user_flow_upvotes)
 
         message_counts = ChatMessageDao.get_msg_count_by_flow_ids(resource_ids)
 
